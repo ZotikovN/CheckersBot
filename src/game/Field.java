@@ -149,6 +149,7 @@ class Field extends GridPane {
                     movePiece(piece, i-2, j-2); // перемещение шашки
                     piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
                     if (canJump(piece)) {
+                        removeCapturedPieces();
                         jumpBot(piece);
                         multipleJump = true;
                     } else {
@@ -170,6 +171,7 @@ class Field extends GridPane {
                     movePiece(piece, i+2, j+2); // перемещение шашки
                     piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
                     if (canJump(piece)) {
+                        removeCapturedPieces();
                         jumpBot(piece);
                         multipleJump = true;
                     } else {
@@ -191,6 +193,7 @@ class Field extends GridPane {
                     movePiece(piece, i+2, j-2); // перемещение шашки
                     piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
                     if (canJump(piece)) {
+                        removeCapturedPieces();
                         jumpBot(piece);
                         multipleJump = true;
                     } else {
@@ -212,6 +215,7 @@ class Field extends GridPane {
                     movePiece(piece, i-2, j+2); // перемещение шашки
                     piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
                     if (canJump(piece)) {
+                        removeCapturedPieces();
                         jumpBot(piece);
                         multipleJump = true;
                     } else {
