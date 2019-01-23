@@ -52,11 +52,16 @@ class Field extends GridPane {
             }
         }
         this.setOnMouseClicked((final MouseEvent click) -> {
-            int row = (int) (click.getY() * 8 / fieldSize);
-            int col = (int) (click.getX() * 8 / fieldSize);
-            if (squareContainsPiece(row, col) && !multipleJump)
-                selectPiece(pieces[row][col]);
-            else move(row, col);
+            if (playerSide == Side.HUMAN) {
+                int row = (int) (click.getY() * 8 / fieldSize);
+                int col = (int) (click.getX() * 8 / fieldSize);
+                if (squareContainsPiece(row, col) && !multipleJump)
+                    selectPiece(pieces[row][col]);
+                else move(row, col);
+            }
+            else {
+                moveBot();
+            }
         });
     }
 
@@ -83,22 +88,143 @@ class Field extends GridPane {
     }
 
 
-    // ход
+    // ход игрока
     private void move(int row, int col) {
-        if (playerSide == Side.HUMAN) {
-            if (row % 2 != col % 2 && selection.isSet()) { // если это игровая клетка и выделена шашка
-                int diffR = Math.abs(row - selection.target.row);
-                int diffC = Math.abs(col - selection.target.col);
-                if (diffR == 1 && diffC == 1) simpleMove(row, col);
-                else if(diffR == 2 && diffC == 2) jump(row, col);
+        if (row % 2 != col % 2 && selection.isSet()) { // если это игровая клетка и выделена шашка
+            int diffR = Math.abs(row - selection.target.row);
+            int diffC = Math.abs(col - selection.target.col);
+            if (diffR == 1 && diffC == 1) simpleMove(row, col);
+            else if(diffR == 2 && diffC == 2) jump(row, col);
+        }
+    }
+
+
+    // ход ИИ
+    private void moveBot() {
+        Bot black;
+        if (mustJump) {
+            black = new Bot();
+            System.out.println("I must eat");
+            int i, j;
+            for (i = 0; i < pieces.length; i++) {
+                for (j = 0; j < pieces.length; j++) {
+                    if (squareContainsPiece(i,j)) {
+                        Piece piece = pieces[i][j];
+                        if (piece.hasSide(Side.BOT) && canJump(piece)){
+                            jumpBot(piece);
+                            System.out.println("1");
+                            break;
+                        }
+                    }
+                }
             }
         }
         else {
-            Bot black;
+            black = new Bot();
+            black.moveBot();
+            System.out.println("I am thinking");
             switchPlayer();
         }
-
     }
+
+    private boolean checkHuman(int row, int col){
+        Piece piece = pieces[row][col];
+        return piece.hasSide(Side.HUMAN);
+    }
+
+
+
+    private void jumpBot(Piece piece) {
+        int i = piece.getRow();
+        int j = piece.getCol();
+        if (squareExists(i-1, j-1) && squareContainsPiece(i-1, j-1)
+                && checkHuman(i-1,j-1)) {
+            int capturedX = j-1; // координаты
+            int capturedY = i-1; // захватываемой шашки
+            System.out.println("1");
+            if(squareContainsPiece(capturedY, capturedX)) {
+                Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
+                // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
+                if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
+                    movePiece(piece, i-2, j-2); // перемещение шашки
+                    piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
+                    if (canJump(piece)) {
+                        jumpBot(piece);
+                        multipleJump = true;
+                    } else {
+                        removeCapturedPieces();
+                        multipleJump = false;
+                        switchPlayer();
+                    }
+                }
+            }}
+        else if (squareExists(i+1, j+1) && squareContainsPiece(i+1, j+1)
+                && checkHuman(i+1,j+1)) {
+            int capturedX = j+1; // координаты
+            int capturedY = i+1; // захватываемой шашки
+            System.out.println("2");
+            if(squareContainsPiece(capturedY, capturedX)) {
+                Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
+                // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
+                if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
+                    movePiece(piece, i+2, j+2); // перемещение шашки
+                    piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
+                    if (canJump(piece)) {
+                        jumpBot(piece);
+                        multipleJump = true;
+                    } else {
+                        removeCapturedPieces();
+                        multipleJump = false;
+                        switchPlayer();
+                    }
+                }
+            }}
+        else if (squareExists(i+1, j-1) && squareContainsPiece(i+1, j-1)
+                && checkHuman(i+1,j-1)) {
+            int capturedX = j-1; // координаты
+            int capturedY = i+1; // захватываемой шашки
+            System.out.println("3");
+            if(squareContainsPiece(capturedY, capturedX)) {
+                Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
+                // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
+                if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
+                    movePiece(piece, i+2, j-2); // перемещение шашки
+                    piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
+                    if (canJump(piece)) {
+                        jumpBot(piece);
+                        multipleJump = true;
+                    } else {
+                        removeCapturedPieces();
+                        multipleJump = false;
+                        switchPlayer();
+                    }
+                }
+            }}
+        else if (squareExists(i-1, j+1) && squareContainsPiece(i-1, j+1)
+                && checkHuman(i-1,j+1)) {
+            int capturedX = j+1; // координаты
+            int capturedY = i-1; // захватываемой шашки
+            System.out.println("4");
+            if(squareContainsPiece(capturedY, capturedX)) {
+                Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
+                // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
+                if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
+                    movePiece(piece, i-2, j+2); // перемещение шашки
+                    piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
+                    if (canJump(piece)) {
+                        jumpBot(piece);
+                        multipleJump = true;
+                    } else {
+                        removeCapturedPieces();
+                        multipleJump = false;
+                        switchPlayer();
+                    }
+                }
+            }
+        }
+    }
+
+
 
 
     // простой ход (перемещение на одну клетку)
@@ -139,22 +265,24 @@ class Field extends GridPane {
 
     // прыжок шашкой (через шашку соперника)
     private void jump(int row, int col) {
-        Piece piece = selection.target;
-        int capturedX = piece.col + (col - piece.col) / 2; // координаты
-        int capturedY = piece.row + (row - piece.row) / 2; // захватываемой шашки
-        if(squareContainsPiece(capturedY, capturedX)) {
-            Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
-            // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
-            if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
-                movePiece(piece, row, col); // перемещение шашки
-                piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
-                if (canJump(piece)) {
-                    selectPiece(piece);
-                    multipleJump = true;
-                } else {
-                    removeCapturedPieces();
-                    multipleJump = false;
-                    switchPlayer();
+        if (playerSide == Side.HUMAN) {
+            Piece piece = selection.target;
+            int capturedX = piece.col + (col - piece.col) / 2; // координаты
+            int capturedY = piece.row + (row - piece.row) / 2; // захватываемой шашки
+            if(squareContainsPiece(capturedY, capturedX)) {
+                Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
+                // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
+                if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
+                    movePiece(piece, row, col); // перемещение шашки
+                    piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
+                    if (canJump(piece)) {
+                        selectPiece(piece);
+                        multipleJump = true;
+                    } else {
+                        removeCapturedPieces();
+                        multipleJump = false;
+                        switchPlayer();
+                    }
                 }
             }
         }

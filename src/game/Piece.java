@@ -20,6 +20,14 @@ class Piece extends ImageView {
         col = _col;
     }
 
+    int getRow() {
+        return row;
+    }
+
+    int getCol() {
+        return col;
+    }
+
     boolean hasSide(Side _side) {
         return side == _side;
     }
