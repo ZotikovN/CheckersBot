@@ -17,6 +17,7 @@ class Field extends GridPane {
     // флаги
     private boolean mustJump = false;
     private boolean multipleJump = false;
+    public boolean advancedBot = true;
     // множества шашек
     private Set<Piece> whitePieces = new HashSet<>();
     private Set<Piece> blackPieces = new HashSet<>();
@@ -59,12 +60,19 @@ class Field extends GridPane {
                     selectPiece(pieces[row][col]);
                 else move(row, col);
             }
-            else {
+            else if (playerSide == Side.BOT){
                 moveBot();
             }
         });
     }
 
+    public void setAdvancedBot() {
+        this.advancedBot = true;
+    }
+
+    public void setSimpleBot() {
+        this.advancedBot = false;
+    }
 
     // выделяет шашку, если она принадлежит игроку и это не череда прыжков
     private void selectPiece(Piece piece) {
@@ -88,6 +96,8 @@ class Field extends GridPane {
     }
 
 
+
+
     // ход игрока
     private void move(int row, int col) {
         if (row % 2 != col % 2 && selection.isSet()) { // если это игровая клетка и выделена шашка
@@ -99,11 +109,160 @@ class Field extends GridPane {
     }
 
 
+    private MoveBot safeMove(){
+        Piece[][] scan = new Piece[8][8];
+        int i,j,x,y,x1,y1,toRow,toCol;
+        for (i = 0; i < pieces.length; i++) {
+            for (j = 0; j < pieces.length; j++) {
+                if ((squareContainsPiece(i,j))){
+                    Piece piece = pieces[i][j];
+                    scan[i][j] = piece;
+                }
+            }
+        }
+        for (x = 0; x < scan.length; x++) {
+            for (y = 0; y < scan.length; y++) {
+                if (scan[x][y] != null){
+                    Piece piece = scan[x][y];
+                    if (piece.hasSide(Side.BOT)) {
+                        if (squareExists(x-1, y-1) && !squareContainsPiece(x-1, y-1)
+                                && piece.isKing()){
+                            scan[piece.row][piece.col] = null;
+                            scan[x-1][y-1] = piece;
+                            piece.row = x-1;
+                            piece.col = y-1;
+                            for (x1 = 0; x1 < scan.length; x1++) {
+                                for (y1 = 0; y1 < scan.length; y1++) {
+                                    if (scan[x1][y1] != null){
+                                        Piece pieceHuman = scan[x1][y1];
+                                        if (pieceHuman.hasSide(Side.HUMAN) && cantJumpForBot(pieceHuman)) {
+                                            toRow = x-1;
+                                            toCol = y-1;
+                                            MoveBot move = new MoveBot(x,y,toRow, toCol);
+                                            return move;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (squareExists(x+1, y+1) && !squareContainsPiece(x+1, y+1)){
+                            scan[piece.row][piece.col] = null;
+                            scan[x+1][y+1] = piece;
+                            piece.row = x+1;
+                            piece.col = y+1;
+                            for (x1 = 0; x1 < scan.length; x1++) {
+                                for (y1 = 0; y1 < scan.length; y1++) {
+                                    if (scan[x1][y1] != null){
+                                        Piece pieceHuman = scan[x1][y1];
+                                        if (pieceHuman.hasSide(Side.HUMAN) && cantJumpForBot(pieceHuman)) {
+                                            toRow = x+1;
+                                            toCol = y+1;
+                                            MoveBot move = new MoveBot(x,y,toRow, toCol);
+                                            return move;
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                        if (squareExists(x+1, y-1) && !squareContainsPiece(x+1, y-1)){
+                            scan[piece.row][piece.col] = null;
+                            scan[x+1][y-1] = piece;
+                            piece.row = x+1;
+                            piece.col = y-1;
+                            for (x1 = 0; x1 < scan.length; x1++) {
+                                for (y1 = 0; y1 < scan.length; y1++) {
+                                    if (scan[x1][y1] != null){
+
+                                        Piece pieceHuman = scan[x1][y1];
+                                        if (pieceHuman.hasSide(Side.HUMAN) && cantJumpForBot(pieceHuman)) {
+                                            toRow = x+1;
+                                            toCol = y-1;
+                                            MoveBot move = new MoveBot(x,y,toRow, toCol);
+                                            return move;
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                        if (squareExists(x-1, y+1) && !squareContainsPiece(x-1, y+1)
+                                && piece.isKing()){
+                            scan[piece.row][piece.col] = null;
+                            scan[x-1][y+1] = piece;
+                            piece.row = x-1;
+                            piece.col = y+1;
+                            for (x1 = 0; x1 < scan.length; x1++) {
+                                for (y1 = 0; y1 < scan.length; y1++) {
+                                    if (scan[x1][y1] != null){
+                                        Piece pieceHuman = scan[x1][y1];
+                                        if (pieceHuman.hasSide(Side.HUMAN) && cantJumpForBot(pieceHuman)) {
+                                            toRow = x-1;
+                                            toCol = y+1;
+                                            MoveBot move = new MoveBot(x,y,toRow, toCol);
+                                            return move;
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+        return deathMove();
+    }
+
+    //ход Бота, даже если следующую его шашку съедят
+    private MoveBot deathMove() {
+        int x,y,toRow,toCol;
+        for (x = 0; x < pieces.length; x++) {
+            for (y = 0; y < pieces.length; y++) {
+                if (pieces[x][y] != null){
+                    Piece piece = pieces[x][y];
+                    if (piece.hasSide(Side.BOT)) {
+                        if (squareExists(x-1, y-1) && !squareContainsPiece(x-1, y-1)
+                                && piece.isKing()){
+                            toRow = x-1;
+                            toCol = y-1;
+                            MoveBot move = new MoveBot(x,y,toRow, toCol);
+                            return move;
+                        }
+                        else if (squareExists(x+1, y+1) && !squareContainsPiece(x+1, y+1)){
+                            toRow = x+1;
+                            toCol = y+1;
+                            MoveBot move = new MoveBot(x,y,toRow, toCol);
+                            return move;
+
+                        }
+                        else if (squareExists(x+1, y-1) && !squareContainsPiece(x+1, y-1)){
+                            toRow = x+1;
+                            toCol = y-1;
+                            MoveBot move = new MoveBot(x,y,toRow, toCol);
+                            return move;
+                        }
+                        else if (squareExists(x-1, y+1) && !squareContainsPiece(x-1, y+1)
+                                && piece.isKing()){
+                            toRow = x-1;
+                            toCol = y+1;
+                            MoveBot move = new MoveBot(x,y,toRow, toCol);
+                            return move;
+
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
+
     // ход ИИ
     private void moveBot() {
-        Bot black;
+        MoveBot black;
         if (mustJump) {
-            black = new Bot();
             System.out.println("I must eat");
             int i, j;
             for (i = 0; i < pieces.length; i++) {
@@ -120,10 +279,31 @@ class Field extends GridPane {
             }
         }
         else {
-            black = new Bot();
-            black.moveBot();
-            System.out.println("I am thinking");
-            switchPlayer();
+            if (advancedBot){
+                System.out.println("I am thinking");
+                black = safeMove();
+                int row = black.getRow();
+                int col = black.getCol();
+                int toRow = black.getMoveToRow();
+                int toCol = black.getMoveToCol();
+                Piece piece = pieces[row][col];
+                movePiece(piece, toRow, toCol);
+                piece.tryToBecomeKing();
+                switchPlayer();
+            }
+            else {
+                System.out.println("big thonk");
+                black = deathMove();
+                int row = black.getRow();
+                int col = black.getCol();
+                int toRow = black.getMoveToRow();
+                int toCol = black.getMoveToCol();
+                Piece piece = pieces[row][col];
+                movePiece(piece, toRow, toCol);
+                piece.tryToBecomeKing();
+                switchPlayer();
+            }
+
         }
     }
 
@@ -132,13 +312,20 @@ class Field extends GridPane {
         return piece.hasSide(Side.HUMAN);
     }
 
+    private boolean checkBot(int row, int col){
+        Piece piece = pieces[row][col];
+        return piece.hasSide(Side.BOT);
+    }
 
 
+
+
+    // прыжок шашки бота (через шашку человека)
     private void jumpBot(Piece piece) {
         int i = piece.getRow();
         int j = piece.getCol();
         if (squareExists(i-1, j-1) && squareContainsPiece(i-1, j-1)
-                && checkHuman(i-1,j-1)) {
+                && checkHuman(i-1,j-1) && !squareContainsPiece(i-2, j-2)) {
             int capturedX = j-1; // координаты
             int capturedY = i-1; // захватываемой шашки
             System.out.println("1");
@@ -158,9 +345,10 @@ class Field extends GridPane {
                         switchPlayer();
                     }
                 }
-            }}
+            }
+        }
         else if (squareExists(i+1, j+1) && squareContainsPiece(i+1, j+1)
-                && checkHuman(i+1,j+1)) {
+                && checkHuman(i+1,j+1) && !squareContainsPiece(i+2, j+2)) {
             int capturedX = j+1; // координаты
             int capturedY = i+1; // захватываемой шашки
             System.out.println("2");
@@ -180,9 +368,10 @@ class Field extends GridPane {
                         switchPlayer();
                     }
                 }
-            }}
+            }
+        }
         else if (squareExists(i+1, j-1) && squareContainsPiece(i+1, j-1)
-                && checkHuman(i+1,j-1)) {
+                && checkHuman(i+1,j-1) && !squareContainsPiece(i+2, j-2)) {
             int capturedX = j-1; // координаты
             int capturedY = i+1; // захватываемой шашки
             System.out.println("3");
@@ -202,9 +391,10 @@ class Field extends GridPane {
                         switchPlayer();
                     }
                 }
-            }}
+            }
+        }
         else if (squareExists(i-1, j+1) && squareContainsPiece(i-1, j+1)
-                && checkHuman(i-1,j+1)) {
+                && checkHuman(i-1,j+1) && !squareContainsPiece(i-2, j+2)) {
             int capturedX = j+1; // координаты
             int capturedY = i-1; // захватываемой шашки
             System.out.println("4");
@@ -308,6 +498,25 @@ class Field extends GridPane {
             }
         }
         return false;
+    }
+
+
+    private boolean cantJumpForBot(Piece piece) {
+        int rowShift = 1, colShift = 1, row, col;
+        for(int i = 0, c = 1; i < 4; i++, c *= (-1)) {
+            rowShift *= c;
+            colShift *= -c;
+            row = piece.row + rowShift;
+            col = piece.col + colShift;
+            if(squareExists(row, col) && squareContainsPiece(row, col)
+                    && pieces[row][col].hasSide(playerSide = Side.BOT)
+                    && !capturedPieces.contains(pieces[row][col])) {
+                row += rowShift;
+                col += colShift;
+                if(squareExists(row, col) && !squareContainsPiece(row, col)) return false;
+            }
+        }
+        return true;
     }
 
 

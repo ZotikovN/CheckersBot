@@ -25,7 +25,15 @@ public class Main extends Application {
         scene.setOnKeyPressed((KeyEvent key) -> {
             if(key.getCode() == KeyCode.F5) {
                 root.getChildren().clear();
-                root.getChildren().add(new Field());
+                Field field = new Field();
+                field.setSimpleBot();
+                root.getChildren().add(field);
+            }
+            else if (key.getCode() == KeyCode.F6) {
+                root.getChildren().clear();
+                Field field = new Field();
+                field.setAdvancedBot();
+                root.getChildren().add(field);
             }
         });
         primaryStage.setTitle("English Checkers");
