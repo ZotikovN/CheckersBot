@@ -28,6 +28,10 @@ class Piece extends ImageView {
         return col;
     }
 
+    Side getSide() {
+        return side;
+    }
+
     boolean hasSide(Side _side) {
         return side == _side;
     }
@@ -43,4 +47,14 @@ class Piece extends ImageView {
             king = true;
         }
     }
+
+    public ScanPiece pieceToScan() {
+        Side side = getSide();
+        int row = getRow();
+        int col = getCol();
+        ScanPiece scan = new ScanPiece(side, row, col);
+        return scan;
+    }
+
+
 }

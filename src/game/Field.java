@@ -17,7 +17,9 @@ class Field extends GridPane {
     // флаги
     private boolean mustJump = false;
     private boolean multipleJump = false;
-    public boolean advancedBot = true;
+    private boolean advancedBot = true;
+    public void setAdvancedBot() { this.advancedBot = true; }
+    public void setSimpleBot() { this.advancedBot = false; }
     // множества шашек
     private Set<Piece> whitePieces = new HashSet<>();
     private Set<Piece> blackPieces = new HashSet<>();
@@ -59,20 +61,46 @@ class Field extends GridPane {
                 if (squareContainsPiece(row, col) && !multipleJump)
                     selectPiece(pieces[row][col]);
                 else move(row, col);
+                winnerCheck();
+
             }
             else if (playerSide == Side.BOT){
                 moveBot();
+                winnerCheck();
             }
         });
     }
 
-    public void setAdvancedBot() {
-        this.advancedBot = true;
+    //проверка на победу
+    private void winnerCheck() {
+        boolean checkPlayer = true;
+        boolean checkBot = true;
+        int i,j;
+        for (i = 0; i < pieces.length; i++) {
+            for (j = 0; j < pieces.length; j++) {
+                if (squareContainsPiece(i,j)) {
+                    Piece piece = pieces[i][j];
+                    if (piece.hasSide(Side.BOT)){
+                        checkPlayer = false;
+                    }
+                    if (piece.hasSide(Side.HUMAN)){
+                        checkBot = false;
+                    }
+                }
+            }
+        }
+        if (checkPlayer) {
+            WinnerScreen screen = new WinnerScreen();
+            screen.winnerScreen();
+
+        }
+        if (checkBot) {
+            LoseScreen screen = new LoseScreen();
+            screen.winnerScreen();
+        }
     }
 
-    public void setSimpleBot() {
-        this.advancedBot = false;
-    }
+
 
     // выделяет шашку, если она принадлежит игроку и это не череда прыжков
     private void selectPiece(Piece piece) {
@@ -109,127 +137,154 @@ class Field extends GridPane {
     }
 
 
+    //безопасный ход бота
     private MoveBot safeMove(){
-        Piece[][] scan = new Piece[8][8];
+        ScanPiece[][] scan = new ScanPiece[8][8];
         int i,j,x,y,x1,y1,toRow,toCol;
+        boolean scan1 = true, scan2 = true, scan3 = true, scan4 = true;
         for (i = 0; i < pieces.length; i++) {
             for (j = 0; j < pieces.length; j++) {
                 if ((squareContainsPiece(i,j))){
                     Piece piece = pieces[i][j];
-                    scan[i][j] = piece;
+                    ScanPiece scanPiece = piece.pieceToScan();
+                    scan[i][j] = scanPiece;
                 }
             }
         }
         for (x = 0; x < scan.length; x++) {
             for (y = 0; y < scan.length; y++) {
                 if (scan[x][y] != null){
-                    Piece piece = scan[x][y];
-                    if (piece.hasSide(Side.BOT)) {
+                    ScanPiece pieceScan = scan[x][y];
+                    if (pieceScan.hasSide(Side.BOT)) {
                         if (squareExists(x-1, y-1) && !squareContainsPiece(x-1, y-1)
-                                && piece.isKing()){
-                            scan[piece.row][piece.col] = null;
-                            scan[x-1][y-1] = piece;
-                            piece.row = x-1;
-                            piece.col = y-1;
+                                && pieceScan.isKing()){
+                            scan[pieceScan.row][pieceScan.col] = null;
+                            scan[x-1][y-1] = pieceScan;
+                            pieceScan.row = x-1;
+                            pieceScan.col = y-1;
                             for (x1 = 0; x1 < scan.length; x1++) {
                                 for (y1 = 0; y1 < scan.length; y1++) {
                                     if (scan[x1][y1] != null){
-                                        Piece pieceHuman = scan[x1][y1];
-                                        if (pieceHuman.hasSide(Side.HUMAN) && cantJumpForBot(pieceHuman)) {
-                                            toRow = x-1;
-                                            toCol = y-1;
-                                            MoveBot move = new MoveBot(x,y,toRow, toCol);
-                                            return move;
+                                        ScanPiece pieceHuman = scan[x1][y1];
+                                        if (pieceHuman.hasSide(Side.HUMAN) && canJumpForBot(pieceHuman)) {
+                                            scan1 = false;
+                                            System.out.println("scan1");
                                         }
                                     }
                                 }
                             }
-                        }
-                        if (squareExists(x+1, y+1) && !squareContainsPiece(x+1, y+1)){
-                            scan[piece.row][piece.col] = null;
-                            scan[x+1][y+1] = piece;
-                            piece.row = x+1;
-                            piece.col = y+1;
-                            for (x1 = 0; x1 < scan.length; x1++) {
-                                for (y1 = 0; y1 < scan.length; y1++) {
-                                    if (scan[x1][y1] != null){
-                                        Piece pieceHuman = scan[x1][y1];
-                                        if (pieceHuman.hasSide(Side.HUMAN) && cantJumpForBot(pieceHuman)) {
-                                            toRow = x+1;
-                                            toCol = y+1;
-                                            MoveBot move = new MoveBot(x,y,toRow, toCol);
-                                            return move;
-                                        }
-                                    }
-                                }
+                            if (scan1) {
+                                toRow = x-1;
+                                toCol = y-1;
+                                MoveBot move = new MoveBot(x,y,toRow, toCol);
+                                return move;
                             }
-
-                        }
-                        if (squareExists(x+1, y-1) && !squareContainsPiece(x+1, y-1)){
-                            scan[piece.row][piece.col] = null;
-                            scan[x+1][y-1] = piece;
-                            piece.row = x+1;
-                            piece.col = y-1;
-                            for (x1 = 0; x1 < scan.length; x1++) {
-                                for (y1 = 0; y1 < scan.length; y1++) {
-                                    if (scan[x1][y1] != null){
-
-                                        Piece pieceHuman = scan[x1][y1];
-                                        if (pieceHuman.hasSide(Side.HUMAN) && cantJumpForBot(pieceHuman)) {
-                                            toRow = x+1;
-                                            toCol = y-1;
-                                            MoveBot move = new MoveBot(x,y,toRow, toCol);
-                                            return move;
-                                        }
-                                    }
-                                }
-                            }
-
+                            scan[pieceScan.row][pieceScan.col] = null;
+                            scan[x][y] = pieceScan;
+                            pieceScan.row = x;
+                            pieceScan.col = y;
                         }
                         if (squareExists(x-1, y+1) && !squareContainsPiece(x-1, y+1)
-                                && piece.isKing()){
-                            scan[piece.row][piece.col] = null;
-                            scan[x-1][y+1] = piece;
-                            piece.row = x-1;
-                            piece.col = y+1;
+                                && pieceScan.isKing()){
+                            scan[pieceScan.row][pieceScan.col] = null;
+                            scan[x-1][y+1] = pieceScan;
+                            pieceScan.row = x-1;
+                            pieceScan.col = y+1;
                             for (x1 = 0; x1 < scan.length; x1++) {
                                 for (y1 = 0; y1 < scan.length; y1++) {
                                     if (scan[x1][y1] != null){
-                                        Piece pieceHuman = scan[x1][y1];
-                                        if (pieceHuman.hasSide(Side.HUMAN) && cantJumpForBot(pieceHuman)) {
-                                            toRow = x-1;
-                                            toCol = y+1;
-                                            MoveBot move = new MoveBot(x,y,toRow, toCol);
-                                            return move;
+                                        ScanPiece pieceHuman = scan[x1][y1];
+                                        if (pieceHuman.hasSide(Side.HUMAN) && canJumpForBot(pieceHuman)) {
+                                            scan4 = false;
+                                            System.out.println("scan4");
                                         }
                                     }
                                 }
                             }
-
+                            if (scan4) {
+                                toRow = x-1;
+                                toCol = y+1;
+                                MoveBot move = new MoveBot(x,y,toRow, toCol);
+                                return move;
+                            }
+                            scan[pieceScan.row][pieceScan.col] = null;
+                            scan[x][y] = pieceScan;
+                            pieceScan.row = x;
+                            pieceScan.col = y;
+                        }
+                        if (squareExists(x+1, y+1) && !squareContainsPiece(x+1, y+1)){
+                            scan[pieceScan.row][pieceScan.col] = null;
+                            scan[x+1][y+1] = pieceScan;
+                            pieceScan.row = x+1;
+                            pieceScan.col = y+1;
+                            for (x1 = 0; x1 < scan.length; x1++) {
+                                for (y1 = 0; y1 < scan.length; y1++) {
+                                    if (scan[x1][y1] != null){
+                                        ScanPiece pieceHuman = scan[x1][y1];
+                                        if (pieceHuman.hasSide(Side.HUMAN) && canJumpForBot(pieceHuman)) {
+                                            scan2 = false;
+                                            System.out.println("scan2");
+                                        }
+                                    }
+                                }
+                            }
+                            if(scan2) {
+                                toRow = x+1;
+                                toCol = y+1;
+                                MoveBot move = new MoveBot(x,y,toRow, toCol);
+                                return move;
+                            }
+                            scan[pieceScan.row][pieceScan.col] = null;
+                            scan[x][y] = pieceScan;
+                            pieceScan.row = x;
+                            pieceScan.col = y;
+                        }
+                        if (squareExists(x+1, y-1) && !squareContainsPiece(x+1, y-1)){
+                            scan[pieceScan.row][pieceScan.col] = null;
+                            scan[x+1][y-1] = pieceScan;
+                            pieceScan.row = x+1;
+                            pieceScan.col = y-1;
+                            for (x1 = 0; x1 < scan.length; x1++) {
+                                for (y1 = 0; y1 < scan.length; y1++) {
+                                    if (scan[x1][y1] != null){
+                                        ScanPiece pieceHuman = scan[x1][y1];
+                                        if (pieceHuman.hasSide(Side.HUMAN) && canJumpForBot(pieceHuman)) {
+                                            scan3 = false;
+                                            System.out.println("scan3");
+                                        }
+                                    }
+                                }
+                            }
+                            if(scan3) {
+                                toRow = x+1;
+                                toCol = y-1;
+                                MoveBot move = new MoveBot(x,y,toRow, toCol);
+                                return move;
+                            }
+                            scan[pieceScan.row][pieceScan.col] = null;
+                            scan[x][y] = pieceScan;
+                            pieceScan.row = x;
+                            pieceScan.col = y;
                         }
                     }
                 }
             }
         }
+        System.out.println("i can die");
         return deathMove();
     }
 
-    //ход Бота, даже если следующую его шашку съедят
+    //ход бота, даже если следующую его шашку съедят
     private MoveBot deathMove() {
+        System.out.println("deathmove");
         int x,y,toRow,toCol;
         for (x = 0; x < pieces.length; x++) {
             for (y = 0; y < pieces.length; y++) {
                 if (pieces[x][y] != null){
                     Piece piece = pieces[x][y];
                     if (piece.hasSide(Side.BOT)) {
-                        if (squareExists(x-1, y-1) && !squareContainsPiece(x-1, y-1)
-                                && piece.isKing()){
-                            toRow = x-1;
-                            toCol = y-1;
-                            MoveBot move = new MoveBot(x,y,toRow, toCol);
-                            return move;
-                        }
-                        else if (squareExists(x+1, y+1) && !squareContainsPiece(x+1, y+1)){
+
+                        if (squareExists(x+1, y+1) && !squareContainsPiece(x+1, y+1)){
                             toRow = x+1;
                             toCol = y+1;
                             MoveBot move = new MoveBot(x,y,toRow, toCol);
@@ -250,16 +305,25 @@ class Field extends GridPane {
                             return move;
 
                         }
+                        else if (squareExists(x-1, y-1) && !squareContainsPiece(x-1, y-1)
+                                && piece.isKing()){
+                            toRow = x-1;
+                            toCol = y-1;
+                            MoveBot move = new MoveBot(x,y,toRow, toCol);
+                            return move;
+                        }
                     }
                 }
             }
         }
+        WinnerScreen screen = new WinnerScreen();
+        screen.winnerScreen();
         return null;
     }
 
 
 
-    // ход ИИ
+    // ход бота
     private void moveBot() {
         MoveBot black;
         if (mustJump) {
@@ -270,8 +334,8 @@ class Field extends GridPane {
                     if (squareContainsPiece(i,j)) {
                         Piece piece = pieces[i][j];
                         if (piece.hasSide(Side.BOT) && canJump(piece)){
-                            jumpBot(piece);
                             System.out.println("1");
+                            jumpBot(piece);
                             break;
                         }
                     }
@@ -312,11 +376,6 @@ class Field extends GridPane {
         return piece.hasSide(Side.HUMAN);
     }
 
-    private boolean checkBot(int row, int col){
-        Piece piece = pieces[row][col];
-        return piece.hasSide(Side.BOT);
-    }
-
 
 
 
@@ -324,31 +383,9 @@ class Field extends GridPane {
     private void jumpBot(Piece piece) {
         int i = piece.getRow();
         int j = piece.getCol();
-        if (squareExists(i-1, j-1) && squareContainsPiece(i-1, j-1)
-                && checkHuman(i-1,j-1) && !squareContainsPiece(i-2, j-2)) {
-            int capturedX = j-1; // координаты
-            int capturedY = i-1; // захватываемой шашки
-            System.out.println("1");
-            if(squareContainsPiece(capturedY, capturedX)) {
-                Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
-                // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
-                if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
-                    movePiece(piece, i-2, j-2); // перемещение шашки
-                    piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
-                    if (canJump(piece)) {
-                        removeCapturedPieces();
-                        jumpBot(piece);
-                        multipleJump = true;
-                    } else {
-                        removeCapturedPieces();
-                        multipleJump = false;
-                        switchPlayer();
-                    }
-                }
-            }
-        }
-        else if (squareExists(i+1, j+1) && squareContainsPiece(i+1, j+1)
-                && checkHuman(i+1,j+1) && !squareContainsPiece(i+2, j+2)) {
+        if (squareExists(i+1, j+1) && squareContainsPiece(i+1, j+1)
+                && checkHuman(i+1,j+1) && squareExists(i+2, j+2)
+                && !squareContainsPiece(i+2, j+2)) {
             int capturedX = j+1; // координаты
             int capturedY = i+1; // захватываемой шашки
             System.out.println("2");
@@ -356,22 +393,21 @@ class Field extends GridPane {
                 Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
                 // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
                 if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
+                    removeCapturedPieces();
                     movePiece(piece, i+2, j+2); // перемещение шашки
                     piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
                     if (canJump(piece)) {
-                        removeCapturedPieces();
                         jumpBot(piece);
-                        multipleJump = true;
                     } else {
                         removeCapturedPieces();
-                        multipleJump = false;
                         switchPlayer();
                     }
                 }
             }
         }
         else if (squareExists(i+1, j-1) && squareContainsPiece(i+1, j-1)
-                && checkHuman(i+1,j-1) && !squareContainsPiece(i+2, j-2)) {
+                && checkHuman(i+1,j-1) && squareExists(i+2, j-2)
+                && !squareContainsPiece(i+2, j-2)) {
             int capturedX = j-1; // координаты
             int capturedY = i+1; // захватываемой шашки
             System.out.println("3");
@@ -379,22 +415,21 @@ class Field extends GridPane {
                 Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
                 // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
                 if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
+                    removeCapturedPieces();
                     movePiece(piece, i+2, j-2); // перемещение шашки
                     piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
                     if (canJump(piece)) {
-                        removeCapturedPieces();
                         jumpBot(piece);
-                        multipleJump = true;
                     } else {
                         removeCapturedPieces();
-                        multipleJump = false;
                         switchPlayer();
                     }
                 }
             }
         }
         else if (squareExists(i-1, j+1) && squareContainsPiece(i-1, j+1)
-                && checkHuman(i-1,j+1) && !squareContainsPiece(i-2, j+2)) {
+                && checkHuman(i-1,j+1) && squareExists(i-2, j+2)
+                && !squareContainsPiece(i-2, j+2)) {
             int capturedX = j+1; // координаты
             int capturedY = i-1; // захватываемой шашки
             System.out.println("4");
@@ -402,15 +437,35 @@ class Field extends GridPane {
                 Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
                 // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
                 if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
+                    removeCapturedPieces();
                     movePiece(piece, i-2, j+2); // перемещение шашки
                     piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
                     if (canJump(piece)) {
-                        removeCapturedPieces();
                         jumpBot(piece);
-                        multipleJump = true;
                     } else {
                         removeCapturedPieces();
-                        multipleJump = false;
+                        switchPlayer();
+                    }
+                }
+            }
+        }
+        else if (squareExists(i-1, j-1) && squareContainsPiece(i-1, j-1)
+                && checkHuman(i-1,j-1) && squareExists(i-2, j-2)
+                && !squareContainsPiece(i-2, j-2)) {
+            int capturedX = j-1; // координаты
+            int capturedY = i-1; // захватываемой шашки
+            System.out.println("1");
+            if(squareContainsPiece(capturedY, capturedX)) {
+                Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
+                // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
+                if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
+                    removeCapturedPieces();
+                    movePiece(piece, i-2, j-2); // перемещение шашки
+                    piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
+                    if (canJump(piece)) {
+                        jumpBot(piece);
+                    } else {
+                        removeCapturedPieces();
                         switchPlayer();
                     }
                 }
@@ -501,7 +556,7 @@ class Field extends GridPane {
     }
 
 
-    private boolean cantJumpForBot(Piece piece) {
+    private boolean canJumpForBot(ScanPiece piece) {
         int rowShift = 1, colShift = 1, row, col;
         for(int i = 0, c = 1; i < 4; i++, c *= (-1)) {
             rowShift *= c;
@@ -513,10 +568,10 @@ class Field extends GridPane {
                     && !capturedPieces.contains(pieces[row][col])) {
                 row += rowShift;
                 col += colShift;
-                if(squareExists(row, col) && !squareContainsPiece(row, col)) return false;
+                if(squareExists(row, col) && !squareContainsPiece(row, col)) return true;
             }
         }
-        return true;
+        return false;
     }
 
 
