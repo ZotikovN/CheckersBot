@@ -1,7 +1,6 @@
 package game;
 
 public class MoveBot{
-    private static final int depth = 2;
     private int row, col, moveToRow, moveToCol;
 
 

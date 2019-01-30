@@ -13,6 +13,7 @@ class Field extends GridPane {
     private static final double fieldSize = 576.0;
     private Selection selection = new Selection();
     private Piece[][] pieces = new Piece[8][8];
+    private ScanPiece[][] scan = new ScanPiece[8][8];
     private Side playerSide = Side.HUMAN;
     // флаги
     private boolean mustJump = false;
@@ -71,7 +72,7 @@ class Field extends GridPane {
         });
     }
 
-    //проверка на победу
+    //проверка на победу/проигрыш
     private void winnerCheck() {
         boolean checkPlayer = true;
         boolean checkBot = true;
@@ -126,6 +127,9 @@ class Field extends GridPane {
 
 
 
+
+
+
     // ход игрока
     private void move(int row, int col) {
         if (row % 2 != col % 2 && selection.isSet()) { // если это игровая клетка и выделена шашка
@@ -139,7 +143,6 @@ class Field extends GridPane {
 
     //безопасный ход бота
     private MoveBot safeMove(){
-        ScanPiece[][] scan = new ScanPiece[8][8];
         int i,j,x,y,x1,y1,toRow,toCol;
         boolean scan1 = true, scan2 = true, scan3 = true, scan4 = true;
         for (i = 0; i < pieces.length; i++) {
@@ -156,7 +159,7 @@ class Field extends GridPane {
                 if (scan[x][y] != null){
                     ScanPiece pieceScan = scan[x][y];
                     if (pieceScan.hasSide(Side.BOT)) {
-                        if (squareExists(x-1, y-1) && !squareContainsPiece(x-1, y-1)
+                        if (squareExists(x-1, y-1)  && scan[x-1][y-1] == null
                                 && pieceScan.isKing()){
                             scan[pieceScan.row][pieceScan.col] = null;
                             scan[x-1][y-1] = pieceScan;
@@ -184,7 +187,7 @@ class Field extends GridPane {
                             pieceScan.row = x;
                             pieceScan.col = y;
                         }
-                        if (squareExists(x-1, y+1) && !squareContainsPiece(x-1, y+1)
+                        if (squareExists(x-1, y+1) && scan[x-1][y+1] == null
                                 && pieceScan.isKing()){
                             scan[pieceScan.row][pieceScan.col] = null;
                             scan[x-1][y+1] = pieceScan;
@@ -212,7 +215,7 @@ class Field extends GridPane {
                             pieceScan.row = x;
                             pieceScan.col = y;
                         }
-                        if (squareExists(x+1, y+1) && !squareContainsPiece(x+1, y+1)){
+                        if (squareExists(x+1, y+1) && scan[x+1][y+1] == null){
                             scan[pieceScan.row][pieceScan.col] = null;
                             scan[x+1][y+1] = pieceScan;
                             pieceScan.row = x+1;
@@ -239,7 +242,7 @@ class Field extends GridPane {
                             pieceScan.row = x;
                             pieceScan.col = y;
                         }
-                        if (squareExists(x+1, y-1) && !squareContainsPiece(x+1, y-1)){
+                        if (squareExists(x+1, y-1) && scan[x+1][y-1] == null){
                             scan[pieceScan.row][pieceScan.col] = null;
                             scan[x+1][y-1] = pieceScan;
                             pieceScan.row = x+1;
@@ -327,7 +330,6 @@ class Field extends GridPane {
     private void moveBot() {
         MoveBot black;
         if (mustJump) {
-            System.out.println("I must eat");
             int i, j;
             for (i = 0; i < pieces.length; i++) {
                 for (j = 0; j < pieces.length; j++) {
@@ -344,7 +346,6 @@ class Field extends GridPane {
         }
         else {
             if (advancedBot){
-                System.out.println("I am thinking");
                 black = safeMove();
                 int row = black.getRow();
                 int col = black.getCol();
@@ -356,7 +357,6 @@ class Field extends GridPane {
                 switchPlayer();
             }
             else {
-                System.out.println("big thonk");
                 black = deathMove();
                 int row = black.getRow();
                 int col = black.getCol();
@@ -563,12 +563,12 @@ class Field extends GridPane {
             colShift *= -c;
             row = piece.row + rowShift;
             col = piece.col + colShift;
-            if(squareExists(row, col) && squareContainsPiece(row, col)
-                    && pieces[row][col].hasSide(playerSide = Side.BOT)
-                    && !capturedPieces.contains(pieces[row][col])) {
+            if(squareExists(row, col) && scan[row][col] != null
+                    && scan[row][col].hasSide(playerSide = Side.BOT)
+                    && !capturedPieces.contains(scan[row][col])) {
                 row += rowShift;
                 col += colShift;
-                if(squareExists(row, col) && !squareContainsPiece(row, col)) return true;
+                if(squareExists(row, col) && scan[row][col] == null) return true;
             }
         }
         return false;
