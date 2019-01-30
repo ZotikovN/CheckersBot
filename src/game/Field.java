@@ -152,6 +152,10 @@ class Field extends GridPane {
                     ScanPiece scanPiece = piece.pieceToScan();
                     scan[i][j] = scanPiece;
                 }
+                else {
+                    scan[i][j] = null;
+
+                }
             }
         }
         for (x = 0; x < scan.length; x++) {
