@@ -23,16 +23,9 @@ public class Main extends Application {
         Scene scene = new Scene(root, boardSize, boardSize);
         // обработка нажатия клавиши F5 (начало новой игры)
         scene.setOnKeyPressed((KeyEvent key) -> {
-            if(key.getCode() == KeyCode.F5) {
+            if (key.getCode() == KeyCode.F5) {
                 root.getChildren().clear();
                 Field field = new Field();
-                field.setSimpleBot();
-                root.getChildren().add(field);
-            }
-            else if (key.getCode() == KeyCode.F6) {
-                root.getChildren().clear();
-                Field field = new Field();
-                field.setAdvancedBot();
                 root.getChildren().add(field);
             }
         });

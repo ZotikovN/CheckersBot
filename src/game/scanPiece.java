@@ -17,6 +17,7 @@ public class ScanPiece{
         col = _col;
     }
 
+
     int getRow() {
         return row;
     }
@@ -25,13 +26,25 @@ public class ScanPiece{
         return col;
     }
 
-
+    public Side getSide() {
+        return side;
+    }
 
     boolean hasSide(Side _side) {
         return side == _side;
     }
     boolean isKing() {
         return king;
+    }
+
+    public void tryToBecomeKing() {
+        if(row == lastRow) {
+            king = true;
+        }
+    }
+
+    public void becomeNormal() {
+        king = false;
     }
 
 
