@@ -28,7 +28,7 @@ class Piece extends ImageView {
         return col;
     }
 
-    Side getSide() {
+    private Side getSide() {
         return side;
     }
 
@@ -52,8 +52,8 @@ class Piece extends ImageView {
         Side side = getSide();
         int row = getRow();
         int col = getCol();
-        ScanPiece scan = new ScanPiece(side, row, col);
-        return scan;
+        boolean king = isKing();
+        return new ScanPiece(side, row, col, king);
     }
 
 

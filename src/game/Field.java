@@ -15,10 +15,10 @@ class Field extends GridPane {
     private static final double fieldSize = 576.0;
     private Selection selection = new Selection();
     private Piece[][] pieces = new Piece[8][8];
-    private ScanPiece[][] scan = new ScanPiece[8][8];
     private Side playerSide = Side.HUMAN;
-    private static final int maxDepth = 4;
+    private static final int maxDepth = 6;
     private Map<Integer, MoveBot> moves = new HashMap<>();
+    private static int move = 0;
     // флаги
     private boolean mustJump = false;
     private boolean multipleJump = false;
@@ -146,10 +146,11 @@ class Field extends GridPane {
 
     //лучший ход бота
     private MoveBot bestMove(){
+        ScanPiece[][] scan = new ScanPiece[8][8];
         int i,j;
         for (i = 0; i < pieces.length; i++) {
             for (j = 0; j < pieces.length; j++) {
-                if ((squareContainsPiece(i,j))){
+                if ((pieces[i][j] != null)){
                     Piece piece = pieces[i][j];
                     ScanPiece scanPiece = piece.pieceToScan();
                     scan[i][j] = scanPiece;
@@ -161,44 +162,70 @@ class Field extends GridPane {
             }
         }
         moves.clear();
-        findMoves(0 ,scan, 0, 0, 0, 0, 0, Side.BOT);
+        move += 1;
+        findMoves(scan, 0, 0, 0, 0, 0, Side.BOT);
         return getBestMove();
+    }
+
+    private int miniMax(ScanPiece[][] fieldScan){
+        int i,j, c = 0;
+        for (i = 0; i < fieldScan.length; i++) {
+            for (j = 0; j < fieldScan.length; j++) {
+                if (fieldScan[i][j] != null) {
+                    ScanPiece piece = fieldScan[i][j];
+                    if (piece.hasSide(Side.BOT)){
+                        c += 1;
+                    }
+                    else if (piece.hasSide(Side.HUMAN)){
+                        c -= 1;
+                    }
+                }
+            }
+        }
+        return c;
+    }
+
+    private ScanPiece[][] copyField(ScanPiece[][] field) {
+        int i,j;
+        ScanPiece[][] copy = new ScanPiece[8][8];
+        for (i = 0; i < field.length; i++) {
+            for (j = 0; j < field.length; j++) {
+                if ((field[i][j] != null)){
+                    ScanPiece piece = field[i][j];
+                    copy[i][j] = piece;
+                }
+                else {
+                    copy[i][j] = null;
+
+                }
+            }
+        }
+        return copy;
     }
 
 
 
-
-
-    private void findMoves(int c, ScanPiece[][] scan, int saveRow, int saveCol,
+    private void findMoves(ScanPiece[][] scan, int saveRow, int saveCol,
                            int toRow, int toCol, int depth, Side side){
-        int x, y, i , j;
+        int x, y, i , j, c;
         boolean moveNotJump = true;
         if (depth < maxDepth) {
-            for (i = 0; i < scan.length; i++){
-                for(j = 0; j < scan.length; j++){
-                    if (scan[i][j] != null) {
-                        ScanPiece pieceScan = scan[i][j];
-                        if(side == Side.HUMAN && pieceScan.hasSide(Side.HUMAN) && depth > 0){
-                            // в этом фрагменте происходит с-1
-                            //System.out.println(depth + " глубина, шашка(игрок): строка " + i +" столбец "+ j);
-                            if (canJumpForBot(pieceScan)){
+            if (depth > 0) {
+                for (i = 0; i < scan.length; i++){
+                    for(j = 0; j < scan.length; j++){
+                        if (scan[i][j] != null) {
+                            ScanPiece pieceScan = scan[i][j];
+                            if(canJumpForScan(pieceScan, Side.HUMAN, scan) && side == Side.HUMAN && pieceScan.hasSide(Side.HUMAN)){
                                 moveNotJump = false;
-                                //musteat-HUMAN
-                                findJump(c ,scan, saveRow, saveCol,
+                                findJump(scan, saveRow, saveCol,
                                         toRow, toCol, depth, Side.HUMAN, pieceScan);
-
                             }
-                        }
-                        else if(side == Side.BOT && pieceScan.hasSide(Side.BOT)){
-                            // в этом фрагменте происходит c+1
-                            //System.out.println(depth + " глубина, шашка(бот): строка " + i +" столбец "+ j);
-                            if (canJumpForHuman(pieceScan)){
+                            else if(canJumpForScan(pieceScan, Side.BOT, scan) && side == Side.BOT && pieceScan.hasSide(Side.BOT)){
                                 moveNotJump = false;
-                                findJump(c ,scan, saveRow, saveCol,
+                                findJump(scan, saveRow, saveCol,
                                         toRow, toCol, depth, Side.BOT, pieceScan);
                             }
                         }
-
                     }
                 }
             }
@@ -208,119 +235,112 @@ class Field extends GridPane {
                         if (scan[x][y] != null){
                             ScanPiece pieceScan = scan[x][y];
                             if(side == Side.BOT && pieceScan.hasSide(Side.BOT)){
-                                // в этом фрагменте происходит c+1
-                                //System.out.println(depth + " глубина, шашка: строка " + x +" столбец "+ y);
                                 if (depth == 0) {
-                                    if (squareExists(x-1, y-1)  && scan[x-1][y-1] == null
-                                            && pieceScan.isKing()){
-                                        moveScanPiece(pieceScan, x-1, y-1, scan);
-                                        findMoves(c ,scan, x, y,
-                                                x-1, y-1, depth+1, Side.HUMAN);
-                                        moveScanPiece(pieceScan, x, y, scan);
-                                    }
-                                    if (squareExists(x-1, y+1)  && scan[x-1][y+1] == null
-                                            && pieceScan.isKing()){
-                                        moveScanPiece(pieceScan, x-1, y+1, scan);
-                                        findMoves(c ,scan, x, y,
-                                                x-1, y+1, depth+1, Side.HUMAN);
-                                        moveScanPiece(pieceScan, x, y, scan);
+                                    if (pieceScan.isKing()) {
+                                        System.out.println("0");
+                                        if (squareExists(x-1, y-1)  && scan[x-1][y-1] == null){
+                                            ScanPiece[][] newScan = copyField(scan);
+                                            ScanPiece newPieceScan = newScan[x][y];
+                                            moveScanPiece(newPieceScan, x-1, y-1, newScan);
+                                            findMoves(newScan, x, y,
+                                                    x-1, y-1, depth+1, Side.HUMAN);
+                                        }
+                                        if (squareExists(x-1, y+1)  && scan[x-1][y+1] == null
+                                                && pieceScan.isKing()){
+                                            ScanPiece[][] newScan = copyField(scan);
+                                            ScanPiece newPieceScan = newScan[x][y];
+                                            moveScanPiece(newPieceScan, x-1, y+1, newScan);
+                                            findMoves(newScan, x, y,
+                                                    x-1, y+1, depth+1, Side.HUMAN);
+
+                                        }
                                     }
                                     if (squareExists(x+1,y+1) && scan[x+1][y+1] == null){
-                                        moveScanPiece(pieceScan, x+1, y+1, scan);
-                                        boolean notKing = false;
-                                        if (pieceScan.isKing()) {notKing = true;}
-                                        pieceScan.tryToBecomeKing();
-                                        //System.out.println("ход 1: " + "строка " + (x+1) + " столбец " + (y+1));
-                                        findMoves(c ,scan, x, y,
+                                        ScanPiece[][] newScan = copyField(scan);
+                                        ScanPiece newPieceScan = newScan[x][y];
+                                        moveScanPiece(newPieceScan, x+1, y+1, newScan);
+                                        newPieceScan.tryToBecomeKing();
+                                        findMoves(newScan, x, y,
                                                 x+1, y+1, depth+1, Side.HUMAN);
-                                        moveScanPiece(pieceScan, x, y, scan);
-                                        if (notKing) {pieceScan.becomeNormal();}
                                     }
                                     if (squareExists(x+1, y-1) && scan[x+1][y-1] == null){
-                                        moveScanPiece(pieceScan, x+1, y-1, scan);
-                                        boolean notKing = false;
-                                        if (pieceScan.isKing()) {notKing = true;}
-                                        pieceScan.tryToBecomeKing();
-                                        //System.out.println("ход 2: " + "строка " + (x+1) + " столбец " + (y-1));
-                                        findMoves(c ,scan, x, y,
+                                        ScanPiece[][] newScan = copyField(scan);
+                                        ScanPiece newPieceScan = newScan[x][y];
+                                        moveScanPiece(newPieceScan, x+1, y-1, newScan);
+                                        newPieceScan.tryToBecomeKing();
+                                        findMoves(newScan, x, y,
                                                 x+1, y-1, depth+1, Side.HUMAN);
-                                        moveScanPiece(pieceScan, x, y, scan);
-                                        if (notKing) {pieceScan.becomeNormal();}
                                     }
                                 }
-                                else if((depth%2)==0) {
+                                else {
                                     if (squareExists(x-1, y-1)  && scan[x-1][y-1] == null
                                             && pieceScan.isKing()){
-                                        moveScanPiece(pieceScan, x-1, y-1, scan);
-                                        findMoves(c ,scan, saveRow, saveCol,
+                                        ScanPiece[][] newScan = copyField(scan);
+                                        ScanPiece newPieceScan = newScan[x][y];
+                                        moveScanPiece(newPieceScan, x-1, y-1, newScan);
+                                        findMoves(newScan, saveRow, saveCol,
                                                 toRow, toCol, depth+1, Side.HUMAN);
-                                        moveScanPiece(pieceScan, x, y, scan);
                                     }
                                     if (squareExists(x-1, y+1)  && scan[x-1][y+1] == null
                                             && pieceScan.isKing()){
-                                        moveScanPiece(pieceScan, x-1, y+1, scan);
-                                        findMoves(c ,scan, saveRow, saveCol,
+                                        ScanPiece[][] newScan = copyField(scan);
+                                        ScanPiece newPieceScan = newScan[x][y];
+                                        moveScanPiece(newPieceScan, x-1, y+1, newScan);
+                                        findMoves(newScan, saveRow, saveCol,
                                                 toRow, toCol, depth+1, Side.HUMAN);
-                                        moveScanPiece(pieceScan, x, y, scan);
                                     }
                                     if (squareExists(x+1, y+1)  && scan[x+1][y+1] == null){
-                                        moveScanPiece(pieceScan, x+1, y+1, scan);
-                                        boolean notKing = false;
-                                        if (pieceScan.isKing()) {notKing = true;}
-                                        pieceScan.tryToBecomeKing();
-                                        findMoves(c ,scan, saveRow, saveCol,
+                                        ScanPiece[][] newScan = copyField(scan);
+                                        ScanPiece newPieceScan = newScan[x][y];
+                                        moveScanPiece(newPieceScan, x+1, y+1, newScan);
+                                        newPieceScan.tryToBecomeKing();
+                                        findMoves(newScan, saveRow, saveCol,
                                                 toRow, toCol, depth+1, Side.HUMAN);
-                                        moveScanPiece(pieceScan, x, y, scan);
-                                        if (notKing) {pieceScan.becomeNormal();}
                                     }
                                     if (squareExists(x+1, y-1)  && scan[x+1][y-1] == null){
-                                        moveScanPiece(pieceScan, x+1, y-1, scan);
-                                        boolean notKing = false;
-                                        if (pieceScan.isKing()) {notKing = true;}
-                                        pieceScan.tryToBecomeKing();
-                                        findMoves(c ,scan, saveRow, saveCol,
+                                        ScanPiece[][] newScan = copyField(scan);
+                                        ScanPiece newPieceScan = newScan[x][y];
+                                        moveScanPiece(newPieceScan, x+1, y-1, newScan);
+                                        newPieceScan.tryToBecomeKing();
+                                        findMoves(newScan, saveRow, saveCol,
                                                 toRow, toCol, depth+1, Side.HUMAN);
-                                        moveScanPiece(pieceScan, x, y, scan);
-                                        if (notKing) {pieceScan.becomeNormal();}
                                     }
                                 }
                             }
                             else if(side == Side.HUMAN && pieceScan.hasSide(Side.HUMAN)
-                                    && depth > 0 && (depth%2)==1){
-                                // в этом фрагменте происходит с-1
+                                    && depth > 0) {
                                 if (squareExists(x-1, y-1)  && scan[x-1][y-1] == null){
-                                    moveScanPiece(pieceScan, x-1, y-1, scan);
-                                    boolean notKing = false;
-                                    if (pieceScan.isKing()) {notKing = true;}
-                                    pieceScan.tryToBecomeKing();
-                                    findMoves(c ,scan, saveRow, saveCol,
+                                    ScanPiece[][] newScan = copyField(scan);
+                                    ScanPiece newPieceScan = newScan[x][y];
+                                    moveScanPiece(newPieceScan, x-1, y-1, newScan);
+                                    newPieceScan.tryToBecomeKing();
+                                    findMoves(newScan, saveRow, saveCol,
                                             toRow, toCol, depth+1, Side.BOT);
-                                    moveScanPiece(pieceScan, x, y, scan);
-                                    if (notKing) {pieceScan.becomeNormal();}
                                 }
                                 if (squareExists(x-1, y+1)  && scan[x-1][y+1] == null){
-                                    moveScanPiece(pieceScan, x-1, y+1, scan);
-                                    boolean notKing = false;
-                                    if (pieceScan.isKing()) {notKing = true;}
-                                    pieceScan.tryToBecomeKing();
-                                    findMoves(c ,scan, saveRow, saveCol,
+                                    ScanPiece[][] newScan = copyField(scan);
+                                    ScanPiece newPieceScan = newScan[x][y];
+                                    moveScanPiece(newPieceScan, x-1, y+1, newScan);
+                                    newPieceScan.tryToBecomeKing();
+                                    findMoves(newScan, saveRow, saveCol,
                                             toRow, toCol, depth+1, Side.BOT);
-                                    moveScanPiece(pieceScan, x, y, scan);
-                                    if (notKing) {pieceScan.becomeNormal();}
                                 }
                                 if (squareExists(x+1, y+1)  && scan[x+1][y+1] == null
                                         && pieceScan.isKing()){
-                                    moveScanPiece(pieceScan, x+1, y+1, scan);
-                                    findMoves(c ,scan, saveRow, saveCol,
+                                    ScanPiece[][] newScan = copyField(scan);
+                                    ScanPiece newPieceScan = newScan[x][y];
+                                    moveScanPiece(newPieceScan, x+1, y+1, newScan);
+                                    findMoves(newScan, saveRow, saveCol,
                                             toRow, toCol, depth+1, Side.BOT);
-                                    moveScanPiece(pieceScan, x, y, scan);
                                 }
                                 if (squareExists(x+1, y-1)  && scan[x+1][y-1] == null
                                         && pieceScan.isKing()){
-                                    moveScanPiece(pieceScan, x+1, y-1, scan);
-                                    findMoves(c ,scan, saveRow, saveCol,
+                                    ScanPiece[][] newScan = copyField(scan);
+                                    ScanPiece newPieceScan = newScan[x][y];
+                                    moveScanPiece(newPieceScan, x+1, y-1, newScan);
+                                    newPieceScan.tryToBecomeKing();
+                                    findMoves(newScan, saveRow, saveCol,
                                             toRow, toCol, depth+1, Side.BOT);
-                                    moveScanPiece(pieceScan, x, y, scan);
                                 }
                             }
                         }
@@ -332,162 +352,101 @@ class Field extends GridPane {
         else if (depth == maxDepth) {
             if (squareExists(saveRow,saveCol) && squareExists(toRow, toCol)){
                 MoveBot move = new MoveBot(saveRow, saveCol, toRow, toCol);
-                //System.out.println("||ОБРАБОТКА|| Шашка " + saveRow + " " + saveCol + " ---> " + toRow + " " + toCol + " коэффициент = " + c);
                 Piece piece = pieces[saveRow][saveCol];
-                if (piece.hasSide(Side.BOT) && pieces[toRow][toCol] == null){
-                    if (moves.containsKey(c) ){
-                        moves.remove(c);
+                c = miniMax(scan);
+                if (piece.hasSide(Side.BOT) && pieces[toRow][toCol] == null
+                        && avoidBackMove(saveRow, toRow, piece)){
+                    if (!moves.containsKey(c) && containsValue(saveRow, saveCol, toRow, toCol)){
+                        moves.put(c, move);
                     }
-                    System.out.println("||ЗАПИСЬ|| Шашка " + saveRow + " " + saveCol + " ---> " + toRow + " " + toCol + " коэффициент = " + c);
-                    moves.put(c, move);
                 }
             }
         }
     }
 
+    private Side anotherSide(Side side){
+        if (side == Side.HUMAN) {
+            return Side.BOT;
+        }
+        else {
+            return  Side.HUMAN;
+        }
+    }
 
-    private void findJump(int c, ScanPiece[][] scan, int saveRow, int saveCol,
+    private boolean containsValue (int saveRow, int saveCol, int toRow, int toCol){
+        for (int i : moves.keySet()) {
+            MoveBot move = moves.get(i);
+            if(move.getCol() == saveCol && move.getRow() == saveRow
+                    && move.getMoveToCol() == toRow && move.getMoveToRow() == toCol){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean avoidBackMove(int saveRow, int toRow, Piece piece){
+        int shiftRow = toRow - saveRow;
+        if (shiftRow == -1 && !piece.isKing()) {
+            return false;
+        }
+        return true;
+    }
+
+    private void findJump(ScanPiece[][] scan, int saveRow, int saveCol,
                           int toRow, int toCol, int depth, Side side, ScanPiece pieceScan) {
         int x = pieceScan.row;
         int y = pieceScan.col;
-        if(side == Side.BOT && pieceScan.hasSide(Side.BOT)){
-            if (canJumpForHuman(pieceScan)){
-                //System.out.println(depth + " глубина, шашка(бот): строка " + x +" столбец "+ y);
-                if (squareExists(x+1, y+1) && scan[x+1][y+1] != null
-                        && scan[x+1][y+1].hasSide(Side.HUMAN) && squareExists(x+2, y+2)
-                        && scan[x+2][y+2] == null) {
-                    int capturedX = x+1;
-                    int capturedY = y+1;
-                    ScanPiece capturedScan = scan[capturedX][capturedY];
-                    moveScanPiece(pieceScan, x+2, y+2, scan);
-                    scan[capturedX][capturedY] = null;
-                    //System.out.println("ест 1");
-                    findJump(c+1 ,scan, saveRow, saveCol,
-                            toRow, toCol, depth, Side.BOT, pieceScan);
-                    // шаг назад
-                    moveScanPiece(pieceScan, x, y, scan);
-                    scan[pieceScan.row][pieceScan.col] = capturedScan;
+        if (canJumpForScan(pieceScan, side, scan)){
+            if (squareExists(x+1, y+1) && scan[x+1][y+1] != null
+                    && scan[x+1][y+1].hasSide(anotherSide(side)) && squareExists(x+2, y+2)
+                    && scan[x+2][y+2] == null) {
+                int capturedX = x+1;
+                int capturedY = y+1;
+                scan[capturedX][capturedY] = null;
+                moveScanPiece(pieceScan, x+2, y+2, scan);
+                pieceScan.tryToBecomeKing();
+                findJump(scan, saveRow, saveCol,
+                        toRow, toCol, depth, side, pieceScan);
 
-                }
-                else if (squareExists(x+1, y-1) && scan[x+1][y-1] != null
-                        && scan[x+1][y-1].hasSide(Side.HUMAN) && squareExists(x+2, y-2)
-                        && scan[x+2][y-2] == null){
-                    int capturedX = x+1;
-                    int capturedY = y-1;
-                    ScanPiece capturedScan = scan[capturedX][capturedY];
-                    moveScanPiece(pieceScan, x+2, y-2, scan);
-                    scan[capturedX][capturedY] = null;
-                    //System.out.println("ест 2");
-                    findJump(c+1 ,scan, saveRow, saveCol,
-                            toRow, toCol, depth, Side.BOT, pieceScan);
-                    // шаг назад
-                    moveScanPiece(pieceScan, x, y, scan);
-                    scan[pieceScan.row][pieceScan.col] = capturedScan;
-                }
-                else if (squareExists(x-1, y+1) && scan[x-1][y+1] != null
-                        && scan[x-1][y+1].hasSide(Side.HUMAN) && squareExists(x-2, y+2)
-                        && scan[x-2][y+2] == null) {
-                    int capturedX = x-1;
-                    int capturedY = y+1;
-                    ScanPiece capturedScan = scan[capturedX][capturedY];
-                    moveScanPiece(pieceScan, x-2, y+2, scan);
-                    scan[capturedX][capturedY] = null;
-                    //System.out.println("ест 3");
-                    findJump(c+1 ,scan, saveRow, saveCol,
-                            toRow, toCol, depth, Side.BOT, pieceScan);
-                    // шаг назад
-                    moveScanPiece(pieceScan, x, y, scan);
-                    scan[pieceScan.row][pieceScan.col] = capturedScan;
-                }
-                else if (squareExists(x-1, y-1) && scan[x-1][y-1] != null
-                        && scan[x-1][y-1].hasSide(Side.HUMAN) && squareExists(x-2, y-2)
-                        && scan[x-2][y-2] == null) {
-                    int capturedX = x-1;
-                    int capturedY = y-1;
-                    ScanPiece capturedScan = scan[capturedX][capturedY];
-                    moveScanPiece(pieceScan, x-2, y-2, scan);
-                    scan[capturedX][capturedY] = null;
-                    //System.out.println("ест 4");
-                    findJump(c+1 ,scan, saveRow, saveCol,
-                            toRow, toCol, depth, Side.BOT, pieceScan);
-                    // шаг назад
-                    moveScanPiece(pieceScan, x, y, scan);
-                    scan[pieceScan.row][pieceScan.col] = capturedScan;
-                }
             }
-            else {
-                findMoves(c ,scan, saveRow, saveCol,
-                        toRow, toCol, depth+1, Side.HUMAN);
+            else if (squareExists(x+1, y-1) && scan[x+1][y-1] != null
+                    && scan[x+1][y-1].hasSide(anotherSide(side)) && squareExists(x+2, y-2)
+                    && scan[x+2][y-2] == null){
+                int capturedX = x+1;
+                int capturedY = y-1;
+                scan[capturedX][capturedY] = null;
+                moveScanPiece(pieceScan, x+2, y-2, scan);
+                pieceScan.tryToBecomeKing();
+                findJump(scan, saveRow, saveCol,
+                        toRow, toCol, depth, side, pieceScan);
+            }
+            else if (squareExists(x-1, y+1) && scan[x-1][y+1] != null
+                    && scan[x-1][y+1].hasSide(anotherSide(side)) && squareExists(x-2, y+2)
+                    && scan[x-2][y+2] == null) {
+                int capturedX = x-1;
+                int capturedY = y+1;
+                scan[capturedX][capturedY] = null;
+                moveScanPiece(pieceScan, x-2, y+2, scan);
+                pieceScan.tryToBecomeKing();
+                findJump(scan, saveRow, saveCol,
+                        toRow, toCol, depth, side, pieceScan);
+            }
+            else if (squareExists(x-1, y-1) && scan[x-1][y-1] != null
+                    && scan[x-1][y-1].hasSide(anotherSide(side)) && squareExists(x-2, y-2)
+                    && scan[x-2][y-2] == null) {
+                int capturedX = x-1;
+                int capturedY = y-1;
+                scan[capturedX][capturedY] = null;
+                moveScanPiece(pieceScan, x-2, y-2, scan);
+                //System.out.println("ест 4");
+                pieceScan.tryToBecomeKing();
+                findJump(scan, saveRow, saveCol,
+                        toRow, toCol, depth, side, pieceScan);
             }
         }
-        else if(side == Side.HUMAN && pieceScan.hasSide(Side.HUMAN)){
-            if (canJumpForBot(pieceScan)){
-                //System.out.println(depth + " глубина, шашка(игрок): строка " + x +" столбец "+ y);
-                if (squareExists(x+1, y+1) && scan[x+1][y+1] != null
-                        && scan[x+1][y+1].hasSide(Side.BOT) && squareExists(x+2, y+2)
-                        && scan[x+2][y+2] == null) {
-                    int capturedX = x+1;
-                    int capturedY = y+1;
-                    ScanPiece capturedScan = scan[capturedX][capturedY];
-                    moveScanPiece(pieceScan, x+2, y+2, scan);
-                    scan[capturedX][capturedY] = null;
-                    //System.out.println("ест 1");
-                    findMoves(c-1 ,scan, saveRow, saveCol,
-                            toRow, toCol, depth, Side.HUMAN);
-                    // шаг назад
-                    moveScanPiece(pieceScan, x, y, scan);
-                    scan[pieceScan.row][pieceScan.col] = capturedScan;
-                }
-                if (squareExists(x+1, y-1) && scan[x+1][y-1] != null
-                        && scan[x+1][y-1].hasSide(Side.BOT) && squareExists(x+2, y-2)
-                        && scan[x+2][y-2] == null){
-                    int capturedX = x+1;
-                    int capturedY = y-1;
-                    ScanPiece capturedScan = scan[capturedX][capturedY];
-                    moveScanPiece(pieceScan, x+2, y-2, scan);
-                    scan[capturedX][capturedY] = null;
-                    //System.out.println("ест 2");
-                    findJump(c-1 ,scan, saveRow, saveCol,
-                            toRow, toCol, depth, Side.HUMAN, pieceScan);
-                    // шаг назад
-                    moveScanPiece(pieceScan, x, y, scan);
-                    scan[pieceScan.row][pieceScan.col] = capturedScan;
-                }
-                if (squareExists(x-1, y+1) && scan[x-1][y+1] != null
-                        && scan[x-1][y+1].hasSide(Side.BOT) && squareExists(x-2, y+2)
-                        && scan[x-2][y+2] == null) {
-                    int capturedX = x-1;
-                    int capturedY = y+1;
-                    ScanPiece capturedScan = scan[capturedX][capturedY];
-                    moveScanPiece(pieceScan, x-2, y+2, scan);
-                    scan[capturedX][capturedY] = null;
-                    //System.out.println("ест 3");
-                    findJump(c-1 ,scan, saveRow, saveCol,
-                            toRow, toCol, depth, Side.HUMAN, pieceScan);
-                    // шаг назад
-                    moveScanPiece(pieceScan, x, y, scan);
-                    scan[pieceScan.row][pieceScan.col] = capturedScan;
-                }
-                if (squareExists(x-1, y-1) && scan[x-1][y-1] != null
-                        && scan[x-1][y-1].hasSide(Side.BOT) && squareExists(x-2, y-2)
-                        && scan[x-2][y-2] == null) {
-                    int capturedX = x-1;
-                    int capturedY = y-1;
-                    ScanPiece capturedScan = scan[capturedX][capturedY];
-                    moveScanPiece(pieceScan, x-2, y-2, scan);
-                    scan[capturedX][capturedY] = null;
-                    //System.out.println("ест 4");
-                    findJump(c-1 ,scan, saveRow, saveCol,
-                            toRow, toCol, depth, Side.HUMAN, pieceScan);
-                    // шаг назад
-                    moveScanPiece(pieceScan, x, y, scan);
-                    scan[pieceScan.row][pieceScan.col] = capturedScan;
-                }
-            }
-            else {
-                findMoves(c ,scan, saveRow, saveCol,
-                        toRow, toCol, depth+1, Side.BOT);
-            }
+        else {
+            findMoves(scan, saveRow, saveCol,
+                    toRow, toCol, depth+1, anotherSide(side));
         }
     }
 
@@ -497,7 +456,6 @@ class Field extends GridPane {
         for (int i : moves.keySet()) {
             if(current < i){
                 current = i;
-                System.out.println(i + " i");
             }
         }
         return moves.get(current);
@@ -515,7 +473,6 @@ class Field extends GridPane {
                     if (squareContainsPiece(i,j)) {
                         Piece piece = pieces[i][j];
                         if (piece.hasSide(Side.BOT) && canJump(piece)){
-                            System.out.println("1");
                             jumpBot(piece);
                             break;
                         }
@@ -525,12 +482,8 @@ class Field extends GridPane {
         }
         else {
             black = bestMove();
-            int row = black.getRow();
-            int col = black.getCol();
-            int toRow = black.getMoveToRow();
-            int toCol = black.getMoveToCol();
-            Piece piece = pieces[row][col];
-            movePiece(piece, toRow, toCol);
+            Piece piece = pieces[black.getRow()][black.getCol()];
+            movePiece(piece, black.getMoveToRow(), black.getMoveToCol());
             piece.tryToBecomeKing();
             switchPlayer();
         }
@@ -553,7 +506,6 @@ class Field extends GridPane {
                 && !squareContainsPiece(i+2, j+2)) {
             int capturedX = j+1;
             int capturedY = i+1;
-            System.out.println("2");
             if(squareContainsPiece(capturedY, capturedX)) {
                 Piece captured = pieces[capturedY][capturedX];
                 if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
@@ -574,7 +526,6 @@ class Field extends GridPane {
                 && !squareContainsPiece(i+2, j-2)) {
             int capturedX = j-1; // координаты
             int capturedY = i+1; // захватываемой шашки
-            System.out.println("3");
             if(squareContainsPiece(capturedY, capturedX)) {
                 Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
                 if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
@@ -595,7 +546,6 @@ class Field extends GridPane {
                 && !squareContainsPiece(i-2, j+2)) {
             int capturedX = j+1; // координаты
             int capturedY = i-1; // захватываемой шашки
-            System.out.println("4");
             if(squareContainsPiece(capturedY, capturedX)) {
                 Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
                 // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
@@ -617,7 +567,6 @@ class Field extends GridPane {
                 && !squareContainsPiece(i-2, j-2)) {
             int capturedX = j-1; // координаты
             int capturedY = i-1; // захватываемой шашки
-            System.out.println("1");
             if(squareContainsPiece(capturedY, capturedX)) {
                 Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
                 // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
@@ -729,7 +678,7 @@ class Field extends GridPane {
     }
 
 
-    private boolean canJumpForBot(ScanPiece piece) {
+    private boolean canJumpForScan(ScanPiece piece, Side side, ScanPiece[][] scan) {
         int rowShift = 1, colShift = 1, row, col;
         for(int i = 0, c = 1; i < 4; i++, c *= (-1)) {
             rowShift *= c;
@@ -737,7 +686,7 @@ class Field extends GridPane {
             row = piece.row + rowShift;
             col = piece.col + colShift;
             if(squareExists(row, col) && scan[row][col] != null
-                    && scan[row][col].hasSide(playerSide = Side.BOT)) {
+                    && !scan[row][col].hasSide(side)) {
                 row += rowShift;
                 col += colShift;
                 if(squareExists(row, col) && scan[row][col] == null) return true;
@@ -746,22 +695,6 @@ class Field extends GridPane {
         return false;
     }
 
-    private boolean canJumpForHuman(ScanPiece piece) {
-        int rowShift = 1, colShift = 1, row, col;
-        for(int i = 0, c = 1; i < 4; i++, c *= (-1)) {
-            rowShift *= c;
-            colShift *= -c;
-            row = piece.row + rowShift;
-            col = piece.col + colShift;
-            if(squareExists(row, col) && scan[row][col] != null
-                    && scan[row][col].hasSide(Side.HUMAN)) {
-                row += rowShift;
-                col += colShift;
-                if(squareExists(row, col) && scan[row][col] == null) return true;
-            }
-        }
-        return false;
-    }
 
 
     // переключение игрока (передача хода другому игроку)

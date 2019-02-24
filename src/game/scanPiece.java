@@ -8,32 +8,21 @@ public class ScanPiece{
     int col;
     private Side side;
     private int lastRow;
-    private boolean king = false;
+    private boolean king;
 
-    ScanPiece(Side _side, int _row, int _col) {
+    ScanPiece(Side _side, int _row, int _col, boolean isKing) {
         this.side = _side;
         lastRow = side == Side.HUMAN ? 0 : 7;
         row = _row;
         col = _col;
+        king = isKing;
     }
 
 
-    int getRow() {
-        return row;
-    }
-
-    int getCol() {
-        return col;
-    }
-
-    public Side getSide() {
-        return side;
-    }
-
-    boolean hasSide(Side _side) {
+    public boolean hasSide(Side _side) {
         return side == _side;
     }
-    boolean isKing() {
+    public boolean isKing() {
         return king;
     }
 
@@ -43,9 +32,6 @@ public class ScanPiece{
         }
     }
 
-    public void becomeNormal() {
-        king = false;
-    }
 
 
 
