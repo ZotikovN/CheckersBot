@@ -16,7 +16,7 @@ class Field extends GridPane {
     private Selection selection = new Selection();
     private Piece[][] pieces = new Piece[8][8];
     private Side playerSide = Side.HUMAN;
-    private static final int maxDepth = 6;
+    private static final int maxDepth = 4;
     private Map<Integer, MoveBot> moves = new HashMap<>();
     private static int move = 0;
     // флаги
@@ -75,28 +75,56 @@ class Field extends GridPane {
 
     //проверка на победу/проигрыш
     private void winnerCheck() {
-        boolean checkPlayer = true;
-        boolean checkBot = true;
+        int playerPieces = 0;
+        int botPieces = 0;
         int i,j;
         for (i = 0; i < pieces.length; i++) {
             for (j = 0; j < pieces.length; j++) {
                 if (squareContainsPiece(i,j)) {
                     Piece piece = pieces[i][j];
                     if (piece.hasSide(Side.BOT)){
-                        checkPlayer = false;
+                        botPieces += 1;
                     }
                     if (piece.hasSide(Side.HUMAN)){
-                        checkBot = false;
+                        playerPieces += 1;
                     }
                 }
             }
         }
-        if (checkPlayer) {
+        if (botPieces==0) {
             WinnerScreen screen = new WinnerScreen();
             screen.winnerScreen();
 
         }
-        if (checkBot) {
+        else if (playerPieces==0) {
+            LoseScreen screen = new LoseScreen();
+            screen.winnerScreen();
+        }
+    }
+
+    private void winnerCheckForScan(ScanPiece[][] field) {
+        int playerPieces = 0;
+        int botPieces = 0;
+        int i,j;
+        for (i = 0; i < field.length; i++) {
+            for (j = 0; j < field.length; j++) {
+                if (field[i][j] != null) {
+                    ScanPiece piece = field[i][j];
+                    if (piece.hasSide(Side.BOT)){
+                        botPieces += 1;
+                    }
+                    if (piece.hasSide(Side.HUMAN)){
+                        playerPieces += 1;
+                    }
+                }
+            }
+        }
+        if (botPieces==0) {
+            WinnerScreen screen = new WinnerScreen();
+            screen.winnerScreen();
+
+        }
+        else if (playerPieces==0) {
             LoseScreen screen = new LoseScreen();
             screen.winnerScreen();
         }
@@ -208,6 +236,8 @@ class Field extends GridPane {
     private void findMoves(ScanPiece[][] scan, int saveRow, int saveCol,
                            int toRow, int toCol, int depth, Side side){
         int x, y, i , j, c;
+        int botPieces = 0;
+        int playerPieces = 0;
         boolean moveNotJump = true;
         if (depth < maxDepth) {
             if (depth > 0) {
@@ -234,6 +264,12 @@ class Field extends GridPane {
                     for (y = 0; y < scan.length; y++) {
                         if (scan[x][y] != null){
                             ScanPiece pieceScan = scan[x][y];
+                            if (pieceScan.hasSide(Side.BOT)){
+                                botPieces += 1;
+                            }
+                            if (pieceScan.hasSide(Side.HUMAN)){
+                                playerPieces += 1;
+                            }
                             if(side == Side.BOT && pieceScan.hasSide(Side.BOT)){
                                 if (depth == 0) {
                                     if (pieceScan.isKing()) {
@@ -245,8 +281,7 @@ class Field extends GridPane {
                                             findMoves(newScan, x, y,
                                                     x-1, y-1, depth+1, Side.HUMAN);
                                         }
-                                        if (squareExists(x-1, y+1)  && scan[x-1][y+1] == null
-                                                && pieceScan.isKing()){
+                                        if (squareExists(x-1, y+1)  && scan[x-1][y+1] == null){
                                             ScanPiece[][] newScan = copyField(scan);
                                             ScanPiece newPieceScan = newScan[x][y];
                                             moveScanPiece(newPieceScan, x-1, y+1, newScan);
@@ -259,7 +294,7 @@ class Field extends GridPane {
                                         ScanPiece[][] newScan = copyField(scan);
                                         ScanPiece newPieceScan = newScan[x][y];
                                         moveScanPiece(newPieceScan, x+1, y+1, newScan);
-                                        newPieceScan.tryToBecomeKing();
+                                        pieceScan.tryToBecomeKing();
                                         findMoves(newScan, x, y,
                                                 x+1, y+1, depth+1, Side.HUMAN);
                                     }
@@ -267,7 +302,7 @@ class Field extends GridPane {
                                         ScanPiece[][] newScan = copyField(scan);
                                         ScanPiece newPieceScan = newScan[x][y];
                                         moveScanPiece(newPieceScan, x+1, y-1, newScan);
-                                        newPieceScan.tryToBecomeKing();
+                                        pieceScan.tryToBecomeKing();
                                         findMoves(newScan, x, y,
                                                 x+1, y-1, depth+1, Side.HUMAN);
                                     }
@@ -346,6 +381,15 @@ class Field extends GridPane {
                         }
                     }
                 }
+                if (botPieces==0) {
+                    WinnerScreen screen = new WinnerScreen();
+                    screen.winnerScreen();
+
+                }
+                else if (playerPieces==0) {
+                    LoseScreen screen = new LoseScreen();
+                    screen.winnerScreen();
+                }
             }
 
         }
@@ -356,7 +400,7 @@ class Field extends GridPane {
                 c = miniMax(scan);
                 if (piece.hasSide(Side.BOT) && pieces[toRow][toCol] == null
                         && avoidBackMove(saveRow, toRow, piece)){
-                    if (!moves.containsKey(c) && containsValue(saveRow, saveCol, toRow, toCol)){
+                    if (!moves.containsKey(c)){
                         moves.put(c, move);
                     }
                 }
@@ -482,10 +526,13 @@ class Field extends GridPane {
         }
         else {
             black = bestMove();
-            Piece piece = pieces[black.getRow()][black.getCol()];
-            movePiece(piece, black.getMoveToRow(), black.getMoveToCol());
-            piece.tryToBecomeKing();
-            switchPlayer();
+            winnerCheck();
+            if (squareContainsPiece(black.getRow(),black.getCol()) && squareExists(black.getRow(),black.getCol())) {
+                Piece piece = pieces[black.getRow()][black.getCol()];
+                movePiece(piece, black.getMoveToRow(), black.getMoveToCol());
+                piece.tryToBecomeKing();
+                switchPlayer();
+            }
         }
     }
 
@@ -694,6 +741,7 @@ class Field extends GridPane {
         }
         return false;
     }
+
 
 
 
