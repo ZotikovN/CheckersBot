@@ -102,35 +102,6 @@ class Field extends GridPane {
         }
     }
 
-    private void winnerCheckForScan(ScanPiece[][] field) {
-        int playerPieces = 0;
-        int botPieces = 0;
-        int i,j;
-        for (i = 0; i < field.length; i++) {
-            for (j = 0; j < field.length; j++) {
-                if (field[i][j] != null) {
-                    ScanPiece piece = field[i][j];
-                    if (piece.hasSide(Side.BOT)){
-                        botPieces += 1;
-                    }
-                    if (piece.hasSide(Side.HUMAN)){
-                        playerPieces += 1;
-                    }
-                }
-            }
-        }
-        if (botPieces==0) {
-            WinnerScreen screen = new WinnerScreen();
-            screen.winnerScreen();
-
-        }
-        else if (playerPieces==0) {
-            LoseScreen screen = new LoseScreen();
-            screen.winnerScreen();
-        }
-    }
-
-
 
     // выделяет шашку, если она принадлежит игроку и это не череда прыжков
     private void selectPiece(Piece piece) {
@@ -236,8 +207,6 @@ class Field extends GridPane {
     private void findMoves(ScanPiece[][] scan, int saveRow, int saveCol,
                            int toRow, int toCol, int depth, Side side){
         int x, y, i , j, c;
-        int botPieces = 0;
-        int playerPieces = 0;
         boolean moveNotJump = true;
         if (depth < maxDepth) {
             if (depth > 0) {
@@ -264,18 +233,6 @@ class Field extends GridPane {
                     for (y = 0; y < scan.length; y++) {
                         if (scan[x][y] != null){
                             ScanPiece pieceScan = scan[x][y];
-                            if (pieceScan.hasSide(Side.BOT)){
-                                botPieces += 1;
-                            }
-                            if (pieceScan.hasSide(Side.HUMAN)){
-                                playerPieces += 1;
-                            }
-                            if (playerPieces == 0) {
-                                break;
-                            }
-                            if (botPieces == 0) {
-                                break;
-                            }
                             if(side == Side.BOT && pieceScan.hasSide(Side.BOT)){
                                 if (depth == 0) {
                                     if (pieceScan.isKing()) {
