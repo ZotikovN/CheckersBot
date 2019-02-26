@@ -16,7 +16,7 @@ class Field extends GridPane {
     private Selection selection = new Selection();
     private Piece[][] pieces = new Piece[8][8];
     private Side playerSide = Side.HUMAN;
-    private static final int maxDepth = 3;
+    private static final int maxDepth = 4;
     private Map<Integer, MoveBot> moves = new HashMap<>();
     private static int move = 0;
     // флаги
@@ -181,7 +181,7 @@ class Field extends GridPane {
                 }
             }
         }
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < 4; i++) {
             for (j = 0; j < fieldScan.length; j++) {
                 if (fieldScan[i][j] != null) {
                     ScanPiece piece = fieldScan[i][j];
@@ -191,7 +191,7 @@ class Field extends GridPane {
                 }
             }
         }
-        for (i = 5; i < 8; i++) {
+        for (i = 4; i < 8; i++) {
             for (j = 0; j < fieldScan.length; j++) {
                 if (fieldScan[i][j] != null) {
                     ScanPiece piece = fieldScan[i][j];
