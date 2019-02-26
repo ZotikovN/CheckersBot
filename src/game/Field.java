@@ -681,7 +681,7 @@ class Field extends GridPane {
             row = piece.row + rowShift;
             col = piece.col + colShift;
             if(squareExists(row, col) && scan[row][col] != null
-                    && !scan[row][col].hasSide(side)) {
+                    && scan[row][col].hasSide(anotherSide(side))) {
                 row += rowShift;
                 col += colShift;
                 if(squareExists(row, col) && scan[row][col] == null) return true;
