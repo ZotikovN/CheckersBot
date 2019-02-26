@@ -239,14 +239,20 @@ class Field extends GridPane {
                                         if (squareExists(x-1, y-1)  && scan[x-1][y-1] == null){
                                             ScanPiece[][] newScan = copyField(scan);
                                             ScanPiece newPieceScan = newScan[x][y];
-                                            moveScanPiece(newPieceScan, x-1, y-1, newScan);
+                                            newScan[x][y] = null;
+                                            newScan[x-1][y-1] = newPieceScan;
+                                            newPieceScan.row = x-1;
+                                            newPieceScan.col = y-1;
                                             findMoves(newScan, x, y,
                                                     x-1, y-1, depth+1, Side.HUMAN);
                                         }
                                         if (squareExists(x-1, y+1)  && scan[x-1][y+1] == null){
                                             ScanPiece[][] newScan = copyField(scan);
                                             ScanPiece newPieceScan = newScan[x][y];
-                                            moveScanPiece(newPieceScan, x-1, y+1, newScan);
+                                            newScan[x][y] = null;
+                                            newScan[x-1][y+1] = newPieceScan;
+                                            newPieceScan.row = x-1;
+                                            newPieceScan.col = y+1;
                                             findMoves(newScan, x, y,
                                                     x-1, y+1, depth+1, Side.HUMAN);
 
@@ -255,7 +261,10 @@ class Field extends GridPane {
                                     if (squareExists(x+1,y+1) && scan[x+1][y+1] == null){
                                         ScanPiece[][] newScan = copyField(scan);
                                         ScanPiece newPieceScan = newScan[x][y];
-                                        moveScanPiece(newPieceScan, x+1, y+1, newScan);
+                                        newScan[x][y] = null;
+                                        newScan[x+1][y+1] = newPieceScan;
+                                        newPieceScan.row = x+1;
+                                        newPieceScan.col = y+1;
                                         pieceScan.tryToBecomeKing();
                                         findMoves(newScan, x, y,
                                                 x+1, y+1, depth+1, Side.HUMAN);
@@ -263,7 +272,10 @@ class Field extends GridPane {
                                     if (squareExists(x+1, y-1) && scan[x+1][y-1] == null){
                                         ScanPiece[][] newScan = copyField(scan);
                                         ScanPiece newPieceScan = newScan[x][y];
-                                        moveScanPiece(newPieceScan, x+1, y-1, newScan);
+                                        newScan[x][y] = null;
+                                        newScan[x+1][y-1] = newPieceScan;
+                                        newPieceScan.row = x+1;
+                                        newPieceScan.col = y-1;
                                         pieceScan.tryToBecomeKing();
                                         findMoves(newScan, x, y,
                                                 x+1, y-1, depth+1, Side.HUMAN);
@@ -274,7 +286,10 @@ class Field extends GridPane {
                                             && pieceScan.isKing()){
                                         ScanPiece[][] newScan = copyField(scan);
                                         ScanPiece newPieceScan = newScan[x][y];
-                                        moveScanPiece(newPieceScan, x-1, y-1, newScan);
+                                        newScan[x][y] = null;
+                                        newScan[x-1][y-1] = newPieceScan;
+                                        newPieceScan.row = x-1;
+                                        newPieceScan.col = y-1;
                                         findMoves(newScan, saveRow, saveCol,
                                                 toRow, toCol, depth+1, Side.HUMAN);
                                     }
@@ -282,14 +297,20 @@ class Field extends GridPane {
                                             && pieceScan.isKing()){
                                         ScanPiece[][] newScan = copyField(scan);
                                         ScanPiece newPieceScan = newScan[x][y];
-                                        moveScanPiece(newPieceScan, x-1, y+1, newScan);
+                                        newScan[x][y] = null;
+                                        newScan[x-1][y+1] = newPieceScan;
+                                        newPieceScan.row = x-1;
+                                        newPieceScan.col = y+1;
                                         findMoves(newScan, saveRow, saveCol,
                                                 toRow, toCol, depth+1, Side.HUMAN);
                                     }
                                     if (squareExists(x+1, y+1)  && scan[x+1][y+1] == null){
                                         ScanPiece[][] newScan = copyField(scan);
                                         ScanPiece newPieceScan = newScan[x][y];
-                                        moveScanPiece(newPieceScan, x+1, y+1, newScan);
+                                        newScan[x][y] = null;
+                                        newScan[x+1][y+1] = newPieceScan;
+                                        newPieceScan.row = x+1;
+                                        newPieceScan.col = y+1;
                                         newPieceScan.tryToBecomeKing();
                                         findMoves(newScan, saveRow, saveCol,
                                                 toRow, toCol, depth+1, Side.HUMAN);
@@ -297,7 +318,10 @@ class Field extends GridPane {
                                     if (squareExists(x+1, y-1)  && scan[x+1][y-1] == null){
                                         ScanPiece[][] newScan = copyField(scan);
                                         ScanPiece newPieceScan = newScan[x][y];
-                                        moveScanPiece(newPieceScan, x+1, y-1, newScan);
+                                        newScan[x][y] = null;
+                                        newScan[x+1][y-1] = newPieceScan;
+                                        newPieceScan.row = x+1;
+                                        newPieceScan.col = y-1;
                                         newPieceScan.tryToBecomeKing();
                                         findMoves(newScan, saveRow, saveCol,
                                                 toRow, toCol, depth+1, Side.HUMAN);
@@ -309,7 +333,10 @@ class Field extends GridPane {
                                 if (squareExists(x-1, y-1)  && scan[x-1][y-1] == null){
                                     ScanPiece[][] newScan = copyField(scan);
                                     ScanPiece newPieceScan = newScan[x][y];
-                                    moveScanPiece(newPieceScan, x-1, y-1, newScan);
+                                    newScan[x][y] = null;
+                                    newScan[x-1][y-1] = newPieceScan;
+                                    newPieceScan.row = x-1;
+                                    newPieceScan.col = y-1;
                                     newPieceScan.tryToBecomeKing();
                                     findMoves(newScan, saveRow, saveCol,
                                             toRow, toCol, depth+1, Side.BOT);
@@ -317,7 +344,10 @@ class Field extends GridPane {
                                 if (squareExists(x-1, y+1)  && scan[x-1][y+1] == null){
                                     ScanPiece[][] newScan = copyField(scan);
                                     ScanPiece newPieceScan = newScan[x][y];
-                                    moveScanPiece(newPieceScan, x-1, y+1, newScan);
+                                    newScan[x][y] = null;
+                                    newScan[x-1][y+1] = newPieceScan;
+                                    newPieceScan.row = x-1;
+                                    newPieceScan.col = y+1;
                                     newPieceScan.tryToBecomeKing();
                                     findMoves(newScan, saveRow, saveCol,
                                             toRow, toCol, depth+1, Side.BOT);
@@ -326,7 +356,10 @@ class Field extends GridPane {
                                         && pieceScan.isKing()){
                                     ScanPiece[][] newScan = copyField(scan);
                                     ScanPiece newPieceScan = newScan[x][y];
-                                    moveScanPiece(newPieceScan, x+1, y+1, newScan);
+                                    newScan[x][y] = null;
+                                    newScan[x+1][y+1] = newPieceScan;
+                                    newPieceScan.row = x+1;
+                                    newPieceScan.col = y+1;
                                     findMoves(newScan, saveRow, saveCol,
                                             toRow, toCol, depth+1, Side.BOT);
                                 }
@@ -334,7 +367,10 @@ class Field extends GridPane {
                                         && pieceScan.isKing()){
                                     ScanPiece[][] newScan = copyField(scan);
                                     ScanPiece newPieceScan = newScan[x][y];
-                                    moveScanPiece(newPieceScan, x+1, y-1, newScan);
+                                    newScan[x][y] = null;
+                                    newScan[x+1][y-1] = newPieceScan;
+                                    newPieceScan.row = x+1;
+                                    newPieceScan.col = y-1;
                                     newPieceScan.tryToBecomeKing();
                                     findMoves(newScan, saveRow, saveCol,
                                             toRow, toCol, depth+1, Side.BOT);
@@ -390,7 +426,10 @@ class Field extends GridPane {
                 int capturedX = x+1;
                 int capturedY = y+1;
                 scan[capturedX][capturedY] = null;
-                moveScanPiece(pieceScan, x+2, y+2, scan);
+                scan[x][y] = null;
+                scan[x+2][y+2] = pieceScan;
+                pieceScan.row = x+2;
+                pieceScan.col = y+2;
                 pieceScan.tryToBecomeKing();
                 findJump(scan, saveRow, saveCol,
                         toRow, toCol, depth, side, pieceScan);
@@ -402,7 +441,10 @@ class Field extends GridPane {
                 int capturedX = x+1;
                 int capturedY = y-1;
                 scan[capturedX][capturedY] = null;
-                moveScanPiece(pieceScan, x+2, y-2, scan);
+                scan[x][y] = null;
+                scan[x+2][y-2] = pieceScan;
+                pieceScan.row = x+2;
+                pieceScan.col = y-2;
                 pieceScan.tryToBecomeKing();
                 findJump(scan, saveRow, saveCol,
                         toRow, toCol, depth, side, pieceScan);
@@ -413,7 +455,10 @@ class Field extends GridPane {
                 int capturedX = x-1;
                 int capturedY = y+1;
                 scan[capturedX][capturedY] = null;
-                moveScanPiece(pieceScan, x-2, y+2, scan);
+                scan[x][y] = null;
+                scan[x-2][y+2] = pieceScan;
+                pieceScan.row = x-2;
+                pieceScan.col = y+2;
                 pieceScan.tryToBecomeKing();
                 findJump(scan, saveRow, saveCol,
                         toRow, toCol, depth, side, pieceScan);
@@ -424,7 +469,10 @@ class Field extends GridPane {
                 int capturedX = x-1;
                 int capturedY = y-1;
                 scan[capturedX][capturedY] = null;
-                moveScanPiece(pieceScan, x-2, y-2, scan);
+                scan[x][y] = null;
+                scan[x-2][y-2] = pieceScan;
+                pieceScan.row = x-2;
+                pieceScan.col = y-2;
                 pieceScan.tryToBecomeKing();
                 findJump(scan, saveRow, saveCol,
                         toRow, toCol, depth, side, pieceScan);
@@ -606,13 +654,6 @@ class Field extends GridPane {
         pieces[row][col] = piece;
         this.getChildren().remove(piece);
         this.add(piece, col, row);
-        piece.row = row;
-        piece.col = col;
-    }
-
-    private void moveScanPiece(ScanPiece piece, int row, int col, ScanPiece[][] field) {
-        field[piece.row][piece.col] = null;
-        field[row][col] = piece;
         piece.row = row;
         piece.col = col;
     }
