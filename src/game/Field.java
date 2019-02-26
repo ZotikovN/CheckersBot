@@ -269,9 +269,9 @@ class Field extends GridPane {
                             }
                             if (pieceScan.hasSide(Side.HUMAN)){
                                 playerPieces += 1;
+                            }
                             if (playerPieces == 0) {
                                 break;
-                            }
                             }
                             if (botPieces == 0) {
                                 break;
@@ -279,7 +279,6 @@ class Field extends GridPane {
                             if(side == Side.BOT && pieceScan.hasSide(Side.BOT)){
                                 if (depth == 0) {
                                     if (pieceScan.isKing()) {
-                                        System.out.println("0");
                                         if (squareExists(x-1, y-1)  && scan[x-1][y-1] == null){
                                             ScanPiece[][] newScan = copyField(scan);
                                             ScanPiece newPieceScan = newScan[x][y];
