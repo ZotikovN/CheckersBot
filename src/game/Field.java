@@ -16,7 +16,7 @@ class Field extends GridPane {
     private Selection selection = new Selection();
     private Piece[][] pieces = new Piece[8][8];
     private Side playerSide = Side.HUMAN;
-    private static final int maxDepth = 4;
+    private static final int maxDepth = 3;
     private Map<Integer, MoveBot> moves = new HashMap<>();
     private static int move = 0;
     // флаги
