@@ -269,6 +269,12 @@ class Field extends GridPane {
                             }
                             if (pieceScan.hasSide(Side.HUMAN)){
                                 playerPieces += 1;
+                            if (playerPieces == 0) {
+                                break;
+                            }
+                            }
+                            if (botPieces == 0) {
+                                break;
                             }
                             if(side == Side.BOT && pieceScan.hasSide(Side.BOT)){
                                 if (depth == 0) {
@@ -381,15 +387,6 @@ class Field extends GridPane {
                         }
                     }
                 }
-                if (botPieces==0) {
-                    WinnerScreen screen = new WinnerScreen();
-                    screen.winnerScreen();
-
-                }
-                else if (playerPieces==0) {
-                    LoseScreen screen = new LoseScreen();
-                    screen.winnerScreen();
-                }
             }
 
         }
@@ -417,16 +414,6 @@ class Field extends GridPane {
         }
     }
 
-    private boolean containsValue (int saveRow, int saveCol, int toRow, int toCol){
-        for (int i : moves.keySet()) {
-            MoveBot move = moves.get(i);
-            if(move.getCol() == saveCol && move.getRow() == saveRow
-                    && move.getMoveToCol() == toRow && move.getMoveToRow() == toCol){
-                return false;
-            }
-        }
-        return true;
-    }
 
     private boolean avoidBackMove(int saveRow, int toRow, Piece piece){
         int shiftRow = toRow - saveRow;
@@ -482,7 +469,6 @@ class Field extends GridPane {
                 int capturedY = y-1;
                 scan[capturedX][capturedY] = null;
                 moveScanPiece(pieceScan, x-2, y-2, scan);
-                //System.out.println("ест 4");
                 pieceScan.tryToBecomeKing();
                 findJump(scan, saveRow, saveCol,
                         toRow, toCol, depth, side, pieceScan);
@@ -502,7 +488,10 @@ class Field extends GridPane {
                 current = i;
             }
         }
-        return moves.get(current);
+        if (moves.keySet().isEmpty()) {
+            return null;
+        }
+        else {return moves.get(current);}
     }
 
 
@@ -527,7 +516,11 @@ class Field extends GridPane {
         else {
             black = bestMove();
             winnerCheck();
-            if (squareContainsPiece(black.getRow(),black.getCol()) && squareExists(black.getRow(),black.getCol())) {
+            if (black == null){
+                WinnerScreen screen = new WinnerScreen();
+                screen.winnerScreen();
+            }
+            else if (squareContainsPiece(black.getRow(),black.getCol()) && squareExists(black.getRow(),black.getCol())) {
                 Piece piece = pieces[black.getRow()][black.getCol()];
                 movePiece(piece, black.getMoveToRow(), black.getMoveToCol());
                 piece.tryToBecomeKing();
@@ -571,14 +564,14 @@ class Field extends GridPane {
         else if (squareExists(i+1, j-1) && squareContainsPiece(i+1, j-1)
                 && checkHuman(i+1,j-1) && squareExists(i+2, j-2)
                 && !squareContainsPiece(i+2, j-2)) {
-            int capturedX = j-1; // координаты
-            int capturedY = i+1; // захватываемой шашки
+            int capturedX = j-1;
+            int capturedY = i+1;
             if(squareContainsPiece(capturedY, capturedX)) {
-                Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
+                Piece captured = pieces[capturedY][capturedX];
                 if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
                     removeCapturedPieces();
-                    movePiece(piece, i+2, j-2); // перемещение шашки
-                    piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
+                    movePiece(piece, i+2, j-2);
+                    piece.tryToBecomeKing();
                     if (canJump(piece)) {
                         jumpBot(piece);
                     } else {
@@ -591,15 +584,15 @@ class Field extends GridPane {
         else if (squareExists(i-1, j+1) && squareContainsPiece(i-1, j+1)
                 && checkHuman(i-1,j+1) && squareExists(i-2, j+2)
                 && !squareContainsPiece(i-2, j+2)) {
-            int capturedX = j+1; // координаты
-            int capturedY = i-1; // захватываемой шашки
+            int capturedX = j+1;
+            int capturedY = i-1;
             if(squareContainsPiece(capturedY, capturedX)) {
-                Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
-                // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
+                Piece captured = pieces[capturedY][capturedX];
+
                 if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
                     removeCapturedPieces();
-                    movePiece(piece, i-2, j+2); // перемещение шашки
-                    piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
+                    movePiece(piece, i-2, j+2);
+                    piece.tryToBecomeKing();
                     if (canJump(piece)) {
                         jumpBot(piece);
                     } else {
@@ -612,15 +605,14 @@ class Field extends GridPane {
         else if (squareExists(i-1, j-1) && squareContainsPiece(i-1, j-1)
                 && checkHuman(i-1,j-1) && squareExists(i-2, j-2)
                 && !squareContainsPiece(i-2, j-2)) {
-            int capturedX = j-1; // координаты
-            int capturedY = i-1; // захватываемой шашки
+            int capturedX = j-1;
+            int capturedY = i-1;
             if(squareContainsPiece(capturedY, capturedX)) {
-                Piece captured = pieces[capturedY][capturedX]; // сама захватываемая шашка
-                // если захватыв. шашка приндл. сопернику и ещё не была захвачена (на этом ходу)
+                Piece captured = pieces[capturedY][capturedX];
                 if (!captured.hasSide(playerSide) && capturedPieces.add(captured)) {
                     removeCapturedPieces();
-                    movePiece(piece, i-2, j-2); // перемещение шашки
-                    piece.tryToBecomeKing(); // шашка становится дамкой, если дошла до конца поля
+                    movePiece(piece, i-2, j-2);
+                    piece.tryToBecomeKing();
                     if (canJump(piece)) {
                         jumpBot(piece);
                     } else {
