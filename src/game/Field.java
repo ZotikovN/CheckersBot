@@ -167,21 +167,23 @@ class Field extends GridPane {
     }
 
     private int evaluation(ScanPiece[][] fieldScan, int score){
-        int i,j, p = 0;
+        int i,j, k = 0, p = 0;
         for (i = 0; i < fieldScan.length; i++) {
             for (j = 0; j < fieldScan.length; j++) {
                 if (fieldScan[i][j] != null) {
                     ScanPiece piece = fieldScan[i][j];
                     if (piece.hasSide(Side.BOT)){
                         p += 1;
+                        if (piece.isKing()) {k += 10;}
                     }
                     else if (piece.hasSide(Side.HUMAN)){
                         p -= 1;
+                        if (piece.isKing()) {k -= 10;}
                     }
                 }
             }
         }
-        return p + score;
+        return p + score + k;
     }
 
     private ScanPiece[][] copyField(ScanPiece[][] field) {
