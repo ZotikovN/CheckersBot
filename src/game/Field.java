@@ -16,7 +16,7 @@ class Field extends GridPane {
     private Selection selection = new Selection();
     private Piece[][] pieces = new Piece[8][8];
     private Side playerSide = Side.HUMAN;
-    private static final int maxDepth = 3;
+    private static final int maxDepth = 5;
     private Map<Integer, MoveBot> moves = new HashMap<>();
     private static int move = 0;
     // флаги
@@ -167,7 +167,7 @@ class Field extends GridPane {
     }
 
     private int evaluation(ScanPiece[][] fieldScan, int score){
-        int i,j,c = 0, p = 0;
+        int i,j, p = 0;
         for (i = 0; i < fieldScan.length; i++) {
             for (j = 0; j < fieldScan.length; j++) {
                 if (fieldScan[i][j] != null) {
@@ -181,27 +181,7 @@ class Field extends GridPane {
                 }
             }
         }
-        for (i = 0; i < 4; i++) {
-            for (j = 0; j < fieldScan.length; j++) {
-                if (fieldScan[i][j] != null) {
-                    ScanPiece piece = fieldScan[i][j];
-                    if (piece.hasSide(Side.HUMAN)){
-                        c -= 10;
-                    }
-                }
-            }
-        }
-        for (i = 4; i < 8; i++) {
-            for (j = 0; j < fieldScan.length; j++) {
-                if (fieldScan[i][j] != null) {
-                    ScanPiece piece = fieldScan[i][j];
-                    if (piece.hasSide(Side.BOT)){
-                        c += 10;
-                    }
-                }
-            }
-        }
-        return p + c + score;
+        return p + score;
     }
 
     private ScanPiece[][] copyField(ScanPiece[][] field) {
