@@ -451,7 +451,7 @@ class Field extends GridPane {
                 pieceScan.tryToBecomeKing();
                 scan[x+2][y+2] = pieceScan;
                 if (side == Side.BOT) {score += 50;}
-                else {score -=50;}
+                else if (side == Side.HUMAN) {score -=55;}
                 findJump(scan, saveRow, saveCol,
                         toRow, toCol, depth, side, pieceScan, score);
 
@@ -468,7 +468,7 @@ class Field extends GridPane {
                 pieceScan.tryToBecomeKing();
                 scan[x+2][y-2] = pieceScan;
                 if (side == Side.BOT) {score += 50;}
-                else {score -=50;}
+                else if (side == Side.HUMAN)  {score -=55;}
                 findJump(scan, saveRow, saveCol,
                         toRow, toCol, depth, side, pieceScan, score);
             }
@@ -484,7 +484,7 @@ class Field extends GridPane {
                 pieceScan.tryToBecomeKing();
                 scan[x-2][y+2] = pieceScan;
                 if (side == Side.BOT) {score += 50;}
-                else {score -=50;}
+                else if (side == Side.HUMAN)  {score -=55;}
                 findJump(scan, saveRow, saveCol,
                         toRow, toCol, depth, side, pieceScan, score);
             }
@@ -500,7 +500,7 @@ class Field extends GridPane {
                 pieceScan.tryToBecomeKing();
                 scan[x-2][y-2] = pieceScan;
                 if (side == Side.BOT) {score += 50;}
-                else {score -=50;}
+                else if (side == Side.HUMAN) {score -=55;}
                 findJump(scan, saveRow, saveCol,
                         toRow, toCol, depth, side, pieceScan, score);
             }
